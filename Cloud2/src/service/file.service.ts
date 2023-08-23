@@ -1,5 +1,5 @@
 import { Pool, QueryResult } from 'pg';
-// import { } from 'aws-sdk';
+// import { S3 } from 'aws-sdk';
 import { PutObjectCommand, S3Client, S3, GetObjectCommand } from "@aws-sdk/client-s3";
 
 import fs from 'fs';
@@ -14,23 +14,24 @@ const pool = new Pool({
     port: 5432,
 });
 
-const s3 = new S3Client({
-    // forcePathStyle: false, 
-    // endpoint: "https://heroku.com",
-    region: 'us-west-1',
-    // credentials:{
-    //     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    //     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    //     secretAccessToken: process.env.AWS_ACCESS_TOKEN,
+const ACCESS_KEY_ID="a729c9d7845af9d306a45e0d1cbd0aed";
+const SECRET_ACCESS_KEY="04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
+const ACCOUNT_ID="044c7053b2a25413acd0120a88ed749e";
 
-    // }
+const s3 = new S3Client({
+    region: "auto",
+    endpoint: `https://${ACCOUNT_ID}r2.cloudflarestorage.com/`,
+    credentials: {
+      accessKeyId: ACCESS_KEY_ID,
+      secretAccessKey: SECRET_ACCESS_KEY,
+    },
 });
 
-export const bucketParams = {
-    Bucket: "example-bucket-name",
-    Key: "example.txt",
-    Body: "content"
-};
+// export const bucketParams = {
+//     Bucket: "example-bucket-name",
+//     Key: "example.txt",
+//     Body: "content"
+// };
 
 export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) => {
     try {
@@ -42,9 +43,9 @@ export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) =>
         const response = await s3.send(new PutObjectCommand(params));
         logger.info(
             "Successfully uploaded object: " +
-            bucketParams.Bucket +
+            params.Bucket +
             "/" +
-            bucketParams.Key
+            params.Key
         );
         return response;
     } catch (err) {
@@ -57,7 +58,7 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: fileName,
     };
-    const response = await s3.send(new GetObjectCommand(bucketParams));
+    const response = await s3.send(new GetObjectCommand(params));
     return response.Body as unknown as Buffer;
 };
 
