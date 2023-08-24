@@ -5,6 +5,8 @@ import { PutObjectCommand, S3Client, S3, GetObjectCommand } from "@aws-sdk/clien
 import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
+import { nanoid } from 'nanoid';
+import { Folder } from '../models/folder.models';
 
 const pool = new Pool({
     user: "alex",
@@ -14,16 +16,16 @@ const pool = new Pool({
     port: 5432,
 });
 
-const ACCESS_KEY_ID="a729c9d7845af9d306a45e0d1cbd0aed";
-const SECRET_ACCESS_KEY="04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
-const ACCOUNT_ID="044c7053b2a25413acd0120a88ed749e";
+const ACCESS_KEY_ID = "a729c9d7845af9d306a45e0d1cbd0aed";
+const SECRET_ACCESS_KEY = "04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
+const ACCOUNT_ID = "044c7053b2a25413acd0120a88ed749e";
 
 const s3 = new S3Client({
     region: "auto",
     endpoint: `https://${ACCOUNT_ID}r2.cloudflarestorage.com/`,
     credentials: {
-      accessKeyId: ACCESS_KEY_ID,
-      secretAccessKey: SECRET_ACCESS_KEY,
+        accessKeyId: ACCESS_KEY_ID,
+        secretAccessKey: SECRET_ACCESS_KEY,
     },
 });
 
@@ -49,8 +51,8 @@ export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) =>
         );
         return response;
     } catch (err) {
-    logger.info("Error", err);
-  }
+        logger.info("Error", err);
+    }
 };
 
 export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
@@ -96,3 +98,59 @@ export const streamVideoOrAudio = async (res: any, fileName: string): Promise<vo
     const readStream = fs.createReadStream(fileStream);
     readStream.pipe(res);
 };
+
+
+// for foldr creation\
+
+export async function createFolder(userId: number, name: string, parentFolderId?: number): Promise<Folder> {
+
+    const queryText = `
+      INSERT INTO folders (name, owner_id, parent_folder_id)
+      VALUES ($1, $2, $3)
+      RETURNING *
+    `;
+
+    const values = [name, userId, parentFolderId];
+
+    const client = await pool.connect();
+    try {
+        const result = await client.query(queryText, values);
+        return result.rows[0];
+    } finally {
+        client.release();
+    }
+}
+
+export async function markAndDeleteUnsafeFile(fileId: number) {
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN'); // Start a transaction
+
+        const getFileQuery = 'SELECT * FROM files WHERE id = $1';
+        const getFileValues = [fileId];
+        const fileResult = await client.query(getFileQuery, getFileValues);
+        if (fileResult.rows.length === 0) {
+            throw new Error('File not found.');
+          }
+        const file = fileResult.rows[0];
+
+        if (file.fileType === 'image' || file.fileType === 'video') {
+            const updateQuery = 'UPDATE files SET is_unsafe = true WHERE id = $1';
+            const updateValues = [fileId];
+            await client.query(updateQuery, updateValues);
+
+            const deleteQuery = 'DELETE FROM files WHERE id = $1';
+            await client.query(deleteQuery, updateValues);
+
+            await client.query('COMMIT'); 
+        } else {
+            throw new Error('File type is not supported for marking as unsafe and deleting.');
+        }
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release(); 
+    }
+}

@@ -14,18 +14,14 @@ const client = new Pool({
 
 export const createUser = async (userInput: UserInput, isAdmin: boolean = false): Promise<User> => {
     const { name, email, password } = userInput;
-
-
     try {
         const existingUserQuery = 'SELECT * FROM users WHERE email = $1';
         const existingUserResult: QueryResult = await client.query(existingUserQuery, [email]);
-        // logger.info(existingUserResult)
 
         if (existingUserResult.rows.length > 0) {
-            throw new Error('User with this email already exists');
+            throw new Error('User with this email already exists'); //TODO ADD ERROR CODES status.ts
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        logger.info('user doesnt exist')
 
         const insertUserQuery = `
             INSERT INTO users (name, email, password)
@@ -33,9 +29,6 @@ export const createUser = async (userInput: UserInput, isAdmin: boolean = false)
             RETURNING *;
         `;
         const values = [name, email, hashedPassword];
-
-        logger.info(values)
-
         const insertUserResult: QueryResult = await client.query(insertUserQuery, values);
 
         return insertUserResult.rows[0];
@@ -66,28 +59,24 @@ export const login = async (email: string, password: string): Promise<User | str
     } catch (error) {
         logger.error('Error during login:', error);
         throw new Error('Login failed');
-    } finally {
-        client.end();
     }
 };
 
 export const deleteUserByEmail = async (email: string): Promise<void> => {
 
     try {
-
+        logger.info(email)
         const findUserQuery = 'SELECT * FROM users WHERE email = $1';
         const findUserResult: QueryResult = await client.query(findUserQuery, [email]);
         const user: User = findUserResult.rows[0];
-
+        
         if (!user) {
             throw new Error('User not found');
         }
-
-        // Delete user
-        const deleteUserQuery = 'DELETE FROM users WHERE email = $1';
+        const deleteUserQuery = 'DELETE FROM users WHERE email = $1 CASCADE';
         await client.query(deleteUserQuery, [email]);
-    } catch (error) {
-        logger.error('Error deleting user:', error);
+    } catch (error:any) {
+        logger.error('Error deleting user:', error.message);
         throw new Error('Failed to delete user');
     }
     

@@ -2,15 +2,22 @@ import { Request, Response, NextFunction } from 'express';
 import { createUser, login, deleteUserByEmail } from '../service/user.service';
 import logger from '../utils/logger';
 import { User, UserInput} from '../models/user.model';
+// import { signJwt } from '../utils/jwt.utils';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 export const createUserHandler = async (req: Request, res: Response, next: NextFunction) => {
     const userInput: UserInput = req.body;
 
     try {
-        const createdUser = await createUser(userInput);
-        res.locals.user = createdUser;
-        return res.status(201).json(createdUser);
-    } catch (error) {
+        const user = await createUser(userInput);
+        if (!process.env.jwtSecret) {
+            return res.status(500).send('JWT secret is not configured.');
+        }
+        const token = jwt.sign({ userId: user.id }, process.env.jwtSecret, { expiresIn: '1h' });
+
+        return res.status(201).json({ user: user, token })
+
+    } catch (error:any) {
         return res.status(409).send(error.message);
     }
 };
@@ -18,27 +25,29 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
 export const loginUserHandler = async (req: Request, res: Response, next: NextFunction) => {
     const { email, password } = req.body;
     try {
-        const loginResult = await login(email, password);
-
-        if (typeof loginResult === 'string') {
-            return res.status(401).send(loginResult);
+        const user = await login(email, password);
+        if (!process.env.jwtSecret) {
+            return res.status(500).send('JWT secret is not configured.');
         }
-        const loggedInUser: User = loginResult;
-        res.locals.user = loggedInUser;
-        logger.info(res.locals.user);
-        return res.status(200).send('Login successful');
+
+        if (typeof user === 'string') {
+            return res.status(401).send(user);
+        }
+        const token = jwt.sign({ userId: user.id }, process.env.jwtSecret, { expiresIn: '1h' });
+
+        return res.status(201).json({ user: user, token });
     } catch (error) {
         return res.status(500).send('Login failed');
     }
 };
 
+
 export const deleteUserHandler = async (req: Request, res: Response, next: NextFunction) => {
     const uemail: string = req.body.email;
-
     try {
         await deleteUserByEmail(uemail);
         return res.status(200).json({ message: 'User deleted successfully' });
-    } catch (error) {
+    } catch (error:any) {
         return res.status(500).send(error.message);
     }
 };

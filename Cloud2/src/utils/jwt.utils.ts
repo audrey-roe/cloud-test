@@ -1,14 +1,16 @@
-import jwt from 'jsonwebtoken'
 import config from '../../config/defaults';
 
 const privateKey = config.accessTokenPrivateKey;
 const publicKey = config.accessTokenPublicKey;
-export function signJwt(object: Object, options?: jwt.SignOptions | undefined){
-    return jwt.sign(object, privateKey, {
-        ...(options && options),
-        algorithm: 'RS256' //to allow us use private and public keys
-    })
+import jwt, { SignOptions } from 'jsonwebtoken';
 
+export function signJwt(payload: object, secretOrPrivateKey: string, options?: SignOptions): string {
+    const mergedOptions: SignOptions = {
+        ...(options || {}),
+        algorithm: 'HS256'
+    };
+
+    return jwt.sign(payload, secretOrPrivateKey, mergedOptions);
 }
 
 export function verifyJwt(token: string){
@@ -31,11 +33,3 @@ export function verifyJwt(token: string){
     }
     
 }
-
-
-function jwtTokens({ user_id, user_name, user_email }) {
-    const user = { user_id, user_name, user_email}; 
-    const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20s' });
-    const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '5m' });
-    return ({ accessToken, refreshToken });
-  }
