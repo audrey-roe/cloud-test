@@ -17,7 +17,8 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
     const userInput: UserInput = req.body;
 
     try {
-        const user = await createUser(userInput, client);
+        const is_admin = userInput.is_admin || false;
+        const user = await createUser({ ...userInput, is_admin: is_admin }, client);
         if (!process.env.jwtSecret) {
             return res.status(500).send('JWT secret is not configured.');
         }

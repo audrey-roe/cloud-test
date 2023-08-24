@@ -4,18 +4,15 @@ import logger from '../utils/logger';
 import { User, UserInput, Admin } from '../models/user.model'; 
 
 
-export const createUser = async (userInput: UserInput, client: any, isAdmin: boolean = false): Promise<User> => {
-    const { name, email, password } = userInput;
+export const createUser = async (userInput: UserInput, client: any): Promise<User> => {
+    const { name, email, password, is_admin } = userInput;
     try {
         const existingUserQuery = 'SELECT * FROM users WHERE email = $1';
         const existingUserResult: QueryResult = await client.query({
             text: existingUserQuery,
             values: [email]
           });
-          console.log("begin")
 
-          console.log(existingUserResult.rows.length)
-          console.log('why not working???')
         if (existingUserResult.rows.length > 0) {
             throw new CustomError('User with this email already exists', 409);
         }
@@ -23,21 +20,19 @@ export const createUser = async (userInput: UserInput, client: any, isAdmin: boo
         //     throw new Error('Can not hash password');
         // }
         
-        console.log('here')
         const hashedPassword = await bcrypt.hash(password, 10);
-        console.log(hashedPassword)
         const insertUserQuery = `
-            INSERT INTO users (name, email, password)
-            VALUES ($1, $2, $3)
+            INSERT INTO users (name, email, password, is_admin)
+            VALUES ($1, $2, $3, $4)
             RETURNING *;
         `;
-        const values = [name, email, hashedPassword];
+        const values = [name, email, hashedPassword, is_admin];
+        console.log(values)
         const insertUserResult: QueryResult = await client.query({
             text: insertUserQuery,
             values: values
         });
-        console.log(insertUserResult)
-
+        console.log(insertUserResult.rows[0])
         return insertUserResult.rows[0];
     } catch (error) {
         logger.error('Error creating user:', error);
