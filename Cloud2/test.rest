@@ -1,0 +1,7 @@
+GET http://localhost.1337/
+Content-Type: application/json
+{
+    "file":{
+        "id": 3
+    }
+}

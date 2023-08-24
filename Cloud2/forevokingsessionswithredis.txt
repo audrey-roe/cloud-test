@@ -1,0 +1,61 @@
+const redis = require('redis');
+const redisClient = redis.createClient();
+
+// Function to store a session in Redis
+function storeSession(sessionId, sessionData) {
+  redisClient.set(`session:${sessionId}`, JSON.stringify(sessionData));
+}
+
+// Function to link a user to their active session
+function linkUserToSession(userId, sessionId) {
+  redisClient.sadd(`user_sessions:${userId}`, sessionId);
+}
+
+// Function to revoke a session
+function revokeSession(sessionId, userId) {
+  redisClient.del(`session:${sessionId}`);
+  redisClient.srem(`user_sessions:${userId}`, sessionId);
+}
+
+// Middleware to check user authentication
+function authenticateMiddleware(req, res, next) {
+  // Check if the user's session is valid in Redis
+  const sessionId = req.cookies.sessionId; // Assuming you use cookies for session IDs
+  const userId = req.cookies.userId;
+
+  if (!sessionId || !userId) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  // Verify session validity in Redis and populate req.user if authenticated
+  redisClient.get(`session:${sessionId}`, (err, sessionData) => {
+    if (err || !sessionData) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const session = JSON.parse(sessionData);
+    if (session.userId !== userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    req.user = session.user;
+    next();
+  });
+}
+
+// Controller to revoke a session
+function revokeSessionController(req, res) {
+  const sessionId = req.params.sessionId;
+  const userId = req.user.id;
+
+  revokeSession(sessionId, userId);
+  res.status(200).json({ message: 'Session revoked' });
+}
+
+module.exports = {
+  storeSession,
+  linkUserToSession,
+  revokeSession,
+  authenticateMiddleware,
+  revokeSessionController,
+};
