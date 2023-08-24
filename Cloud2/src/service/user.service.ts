@@ -1,16 +1,8 @@
-import { Pool, QueryResult } from 'pg';
+import { QueryResult } from 'pg';
 import bcrypt from 'bcrypt';
 import logger from '../utils/logger';
 import { User, UserInput, Admin } from '../models/user.model'; 
-import pool from '../utils/db'
 
-// const client = new Pool({
-//     user: "alex",
-//     password: "alex",
-//     database: "newdatabase",
-//     host: "localhost",
-//     port: 5432,
-// });
 
 export const createUser = async (userInput: UserInput, client: any, isAdmin: boolean = false): Promise<User> => {
     const { name, email, password } = userInput;
@@ -56,26 +48,32 @@ export const createUser = async (userInput: UserInput, client: any, isAdmin: boo
 export const login = async (email: string, password: string,  client: any,): Promise<User | string> => {
 
     try {
-        const findUserQuery = 'SELECT * FROM users WHERE email = $1';
-        const findUserResult: QueryResult = await client.query({
-            text: findUserQuery,
-            values: [email]
-          });        
-        const user: User = findUserResult.rows[0];
-        if (!user) {
-            return 'Invalid email';
-        }
+            const findUserQuery = 'SELECT * FROM users WHERE email = $1';
+            const findUserResult: QueryResult = await client.query({
+                text: findUserQuery,
+                values: [email]
+              });        
+            const user: User = findUserResult.rows[0];
+            if (!user) {
+                throw new Error('Invalid email');
+            }
 
-        const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
-        if (!isPasswordValid) {
-            return 'Invalid password';
-        }
+            const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
+            if (!isPasswordValid) {
+                throw new Error('Invalid password');
+            }
 
-        return user;
-    } catch (error) {
-        logger.error('Error during login:', error);
-        throw new Error('Login failed');
-    }
+            return user;
+        } catch (error:any) {
+            if (error.message === 'Invalid email') {
+              throw new Error('Invalid email');
+            } else if (error.message === 'Invalid password') {
+              throw new Error('Invalid password');
+            } else {
+              logger.error('Error during login:', error);
+              throw new Error('Login failed');
+            }
+        }
 };
 
 export const deleteUserByEmail = async (email: string,  client: any): Promise<void> => {
