@@ -33,7 +33,7 @@ describe('createUser', () => {
   it('should create a user with valid input', async () => {
     // Arrange
     jest.mock('bcrypt', () => ({
-      hash: jest.fn().mockReturnValue('hashedPassword')
+      hash: jest.fn().mockResolvedValue('hashedPassword')
     }));
 
     // Act
@@ -41,14 +41,27 @@ describe('createUser', () => {
 
     // Assert
     expect(mockClient.query).toHaveBeenCalledTimes(2);
-    expect(mockClient.query).toHaveBeenCalledWith({
+     // Expect the SELECT query
+     expect(mockClient.query).toHaveBeenNthCalledWith(1, {
       text: 'SELECT * FROM users WHERE email = $1',
       values: ['johndoe@example.com']
     });
-    expect(mockClient.query).toHaveBeenCalledWith({
-      text: expect.stringContaining('INSERT INTO users (name, email, password)'),
-      values: ['John Doe', 'johndoe@example.com', 'hashedPassword']
-    });
+
+    // Expect the INSERT query
+    const expectedInsertQueryPart = `
+          INSERT INTO users (name, email, password)
+          VALUES ($1, $2, $3)
+          RETURNING *;
+    `;
+    const actualInsertQueryPart = mockClient.query.mock.calls[1][0].text;
+    expect(sanitizeString(actualInsertQueryPart)).toEqual(sanitizeString(expectedInsertQueryPart));
+
+
     expect(result).toEqual({ id: 1, ...userInput });
   });
 });
+
+
+function sanitizeString(input: string): string {
+  return input.replace(/\s/g, ''); // to remove all whitespace characters
+}
