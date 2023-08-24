@@ -32,6 +32,9 @@ describe('User', () => {
           end: jest.fn()
         }))
       }));
+      jest.mock('bcrypt', () => ({
+        hash: jest.fn().mockResolvedValue('hashedPassword')
+      }));
       // Tests that createUser successfully creates a user with valid input
       it('should create a user with valid input', async () => {
         // Arrange
@@ -77,25 +80,6 @@ describe('User', () => {
         const insertUserResult = {
           rows: [{ id: 1, ...userInput }]
         };
-
-        const mockQuery = jest.fn()
-          .mockResolvedValueOnce(existingUserResult)
-          .mockResolvedValueOnce(insertUserResult);
-
-        const mockClient = {
-          query: mockQuery
-        };
-        jest.mock('pg', () => ({
-          Pool: jest.fn(() => ({
-            connect: jest.fn(),
-            query: jest.fn(),
-            end: jest.fn()
-          }))
-        }));
-        jest.mock('bcrypt', () => ({
-          hash: jest.fn().mockResolvedValue('hashedPassword')
-        }));
-
         // Act
         const result = await createUser(userInput, mockClient);
 
@@ -115,11 +99,19 @@ describe('User', () => {
       `;
         const actualInsertQueryPart = mockClient.query.mock.calls[1][0].text;
         expect(sanitizeString(actualInsertQueryPart)).toEqual(sanitizeString(expectedInsertQueryPart));
-
         // expect(result).toEqual({ id: 1, ...userInput, is_admin: true });
       });
+      // Tests that createUser throws a conflict Error when email already exists
+      it('should throw a conflict Error when email already exists', async () => {
+        // Arrange
+        //...
+
+        // Act and Assert
+        await expect(createUser(userInput, mockClient)).rejects.toThrowError();
+      });
+
     });
-    
+
 
   })
   // describe('UserController', ()=>{

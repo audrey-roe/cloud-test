@@ -14,7 +14,9 @@ export const createUser = async (userInput: UserInput, client: any): Promise<Use
           });
 
         if (existingUserResult.rows.length > 0) {
-            throw new CustomError('User with this email already exists', 409);
+            const conflictError: any = new Error('User with this email already exists');
+        conflictError.statusCode = 409;
+        throw conflictError;
         }
         // if(!process.env.saltWorkFactor){
         //     throw new Error('Can not hash password');
@@ -27,16 +29,19 @@ export const createUser = async (userInput: UserInput, client: any): Promise<Use
             RETURNING *;
         `;
         const values = [name, email, hashedPassword, is_admin];
-        console.log(values)
         const insertUserResult: QueryResult = await client.query({
             text: insertUserQuery,
             values: values
         });
-        console.log(insertUserResult.rows[0])
         return insertUserResult.rows[0];
-    } catch (error) {
-        logger.error('Error creating user:', error);
-        throw new Error('Failed to create user');
+    } catch (error:any) {
+        if (error.statusCode === 409) {
+            logger.error('User conflict error:', error);
+            throw error;
+        } else {
+            logger.error('Error creating user:', error);
+            throw new Error('Failed to create user');
+        }
     } 
 };
 
