@@ -13,7 +13,7 @@ const client = new Pool({
     port: 5432,
 });
 
-export const createUserHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const createUserHandler = async (req: Request, res: Response, next: NextFunction, client:any) => {
     const userInput: UserInput = req.body;
 
     try {
@@ -31,18 +31,20 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
     }
 };
 
-export const loginUserHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const loginUserHandler = async (req: Request, res: Response, next: NextFunction, client: any) => {
     const { email, password } = req.body;
     try {
         const user = await login(email, password, client);
-        if (!process.env.jwtSecret) {
-            return res.status(500).send('JWT secret is not configured.');
-        }
+        const jwtsecrets = process.env.jwtSecret
+        console.log(jwtsecrets)
+        // if (!process.env.jwtSecret) {
+        //     return res.status(500).send('JWT secret is not configured.');
+        // }
 
         if (typeof user === 'string') {
             return res.status(401).send(user);
         }
-        const token = jwt.sign({ userId: user.id }, process.env.jwtSecret, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user.id }, "6YtTaJWAU8K029rpyZRaPC5DmmFL5f1u", { expiresIn: '1h' });
 
         return res.status(201).json({ user: user, token });
     } catch (error) {
@@ -51,7 +53,7 @@ export const loginUserHandler = async (req: Request, res: Response, next: NextFu
 };
 
 
-export const deleteUserHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteUserHandler = async (req: Request, res: Response, next: NextFunction, client: any ) => {
     const uemail: string = req.body.email;
     try {
         await deleteUserByEmail(uemail, client);

@@ -6,7 +6,6 @@ const client = new Client({
     connectionString: config.dbUri,
 });
 
-
 async function connect() {
     try {
         await client.connect();

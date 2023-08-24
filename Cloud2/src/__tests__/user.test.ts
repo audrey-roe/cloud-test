@@ -2,7 +2,11 @@ import { createUser } from '../service/user.service';
 import { UserInput } from '../models/user.model';
 import { createUserHandler } from '../controller/user.controller';
 import * as userService from '../service/user.service'; 
-import {Response, Request, NextFunction } from 'express';
+import { mockCreateUser } from '../service/__mocks__/user.service.mock'; 
+import express, {Response, Request, NextFunction } from 'express';
+
+
+
 describe('User', () => {
   describe('UserService', () => {
     describe('createUser', () => {
@@ -117,9 +121,8 @@ describe('User', () => {
             RETURNING *;
       `;
         const actualInsertQueryPart = mockClient.query.mock.calls[1][0].text;
-        console.log(result)
         expect(sanitizeString(actualInsertQueryPart)).toEqual(sanitizeString(expectedInsertQueryPart));
-        // expect(result).toEqual({ id: 1, ...userInput, is_admin: true });
+        expect(result).toEqual({ id: 1, ...userInput, is_admin: true });
       });
       // Tests that createUser throws a conflict Error when email already exists
       it('should throw a conflict Error when email already exists', async () => {
@@ -155,34 +158,44 @@ describe('User', () => {
       const mockClient = {
         query: mockQuery
       };
+      jest.mock('pg', () => ({
+        Pool: jest.fn(() => ({
+          connect: jest.fn(),
+          query: jest.fn(),
+          end: jest.fn()
+        }))
+      }));
+      jest.mock('bcrypt', () => ({
+        hash: jest.fn().mockResolvedValue('hashedPassword')
+      }));
       // Tests that the function successfully creates a user and returns a token
       it('should create a user with valid input', async () => {
+        jest.spyOn(userService, 'createUser').mockImplementation(mockCreateUser);
+
         // Arrange
         const req = {
           body: userInput,
-        } as Request; // Provide a mock request object
+        } as Request; 
     
         const res = {
           status: jest.fn().mockReturnThis(),
           json: jest.fn(),
           send: jest.fn(),
-        } as unknown as Response; // Provide a mock response object
-    
-        userService.createUser = jest.fn().mockResolvedValue(insertUserResult);
-    
+        } as unknown as Response; 
+
         // Act
-        await createUserHandler(req, res, jest.fn() as NextFunction);
-    
-        // Assert
-        expect(userService.createUser).toHaveBeenCalledWith({ ...userInput, is_admin: false }, mockClient); // Check if userService.createUser was called with the expected input
-        expect(res.status).toHaveBeenCalledWith(201); // Check if the response status was set correctly
+        const mockClient = {}; // Create your mock client object
+        await createUserHandler(req, res, jest.fn() as NextFunction, mockClient); // Pass the mock client
+
+          // Assert
+        expect(mockCreateUser).toHaveBeenCalledWith({ ...userInput}, mockClient); 
+        expect(res.status).toHaveBeenCalledWith(201);
         expect(res.json).toHaveBeenCalledWith({
           user: insertUserResult,
-          token: expect.any(String), // Assuming you are generating a token
-        }); // Check if the response was correctly sent
+          token: expect.any(String),
+        }); 
       });
     })
-
   })
 })
 
