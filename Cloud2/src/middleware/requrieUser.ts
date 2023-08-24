@@ -13,7 +13,7 @@ const verifyAccessToken = (req: Request, res: Response, next: NextFunction) => {
         const secret = process.env.jwtSecret
         if(secret){
             const decoded = jwt.verify(token, secret ) as { userId: number };
-            req.userId = decoded.userId;
+            res.locals.userId = decoded.userId;
             next();
         }
         

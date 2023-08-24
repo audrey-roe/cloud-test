@@ -9,7 +9,7 @@ function routes(app: Express){
     app.post('/api/login', loginUserHandler);
     app.post('/api/user', createUserHandler);
     app.delete('/api/user', deleteUserHandler);
-    app.post('/api/upload', uploadFileHandler);
+    app.post('/api/upload', verifyAccessToken, uploadFileHandler);
     app.get('/file/:fileName', getFileHandler);
     app.get('/stream/:fileName', streamFileHandler);
     app.post('/api/create-folder', verifyAccessToken, handleCreateFolder);

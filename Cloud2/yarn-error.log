@@ -1,8 +1,8 @@
 Arguments: 
-  /usr/local/Cellar/node/20.5.1/bin/node /Users/user/.yarn/bin/yarn.js add @types/nanoid
+  /usr/local/Cellar/node/20.5.1/bin/node /Users/user/.yarn/bin/yarn.js add @type/jest
 
 PATH: 
-  /Users/user/.rvm/gems/ruby-2.6.10/bin:/Users/user/.rvm/gems/ruby-2.6.10@global/bin:/Users/user/.rvm/rubies/ruby-2.6.10/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/Users/user/.yarn/bin:/Users/user/.config/yarn/global/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Library/Apple/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/user/.rvm/gems/ruby-2.6.10/bin:/Users/user/.rvm/gems/ruby-2.6.10@global/bin:/Users/user/.rvm/rubies/ruby-2.6.10/bin:/Users/user/.yarn/bin:/Users/user/.config/yarn/global/node_modules/.bin:/Users/user/opt/anaconda3/condabin:/opt/local/bin:/opt/local/sbin:/Users/user/.rvm/bin:/Users/user/.rvm/bin
+  /Users/user/.rvm/gems/ruby-2.6.10/bin:/Users/user/.rvm/gems/ruby-2.6.10@global/bin:/Users/user/.rvm/rubies/ruby-2.6.10/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/usr/local/opt/postgresql@15/bin:/Users/user/.yarn/bin:/Users/user/.config/yarn/global/node_modules/.bin:/opt/local/bin:/opt/local/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/opt/X11/bin:/Library/Apple/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/Users/user/.rvm/gems/ruby-2.6.10/bin:/Users/user/.rvm/gems/ruby-2.6.10@global/bin:/Users/user/.rvm/rubies/ruby-2.6.10/bin:/Users/user/.yarn/bin:/Users/user/.config/yarn/global/node_modules/.bin:/Users/user/opt/anaconda3/bin:/Users/user/opt/anaconda3/condabin:/opt/local/bin:/opt/local/sbin:/Users/user/.rvm/bin:/Users/user/.rvm/bin
 
 Yarn version: 
   1.22.19
@@ -14,8 +14,17 @@ Platform:
   darwin x64
 
 Trace: 
-  Error: getaddrinfo ENOTFOUND registry.yarnpkg.com
-      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:118:26)
+  Error: https://registry.yarnpkg.com/@type%2fjest: Not found
+      at params.callback [as _callback] (/Users/user/.yarn/lib/cli.js:66145:18)
+      at self.callback (/Users/user/.yarn/lib/cli.js:140890:22)
+      at Request.emit (node:events:514:28)
+      at Request.<anonymous> (/Users/user/.yarn/lib/cli.js:141862:10)
+      at Request.emit (node:events:514:28)
+      at IncomingMessage.<anonymous> (/Users/user/.yarn/lib/cli.js:141784:12)
+      at Object.onceWrapper (node:events:628:28)
+      at IncomingMessage.emit (node:events:526:35)
+      at endReadableNT (node:internal/streams/readable:1376:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
 
 npm manifest: 
   {
@@ -28,15 +37,16 @@ npm manifest:
       "aws-sdk": "^2.1442.0",
       "bcrypt": "^5.1.1",
       "config": "^3.3.9",
-      "connect-redis": "^7.1.0",
+      "connect-redis": "6.1.3",
       "cors": "^2.8.5",
       "dayjs": "^1.11.9",
       "dotenv": "^16.3.1",
       "express": "^4.18.2",
+      "express-session": "^1.17.3",
       "jest": "^29.6.3",
       "jsonwebtoken": "^9.0.1",
       "lodash": "^4.17.21",
-      "nanoid": "^4.0.2",
+      "nanoid": "3.1.30",
       "pg": "^8.11.3",
       "pino": "^8.15.0",
       "pino-pretty": "^10.2.0",
@@ -46,8 +56,10 @@ npm manifest:
       "@types/bcrypt": "^5.0.0",
       "@types/body-parser": "^1.19.2",
       "@types/config": "^3.3.0",
+      "@types/connect-redis": "^0.0.20",
       "@types/cors": "^2.8.13",
       "@types/express": "^4.17.17",
+      "@types/express-session": "^1.17.7",
       "@types/jsonwebtoken": "^9.0.2",
       "@types/lodash": "^4.14.197",
       "@types/nanoid": "^3.0.0",
@@ -913,6 +925,11 @@ Lockfile:
     dependencies:
       "@jridgewell/trace-mapping" "0.3.9"
   
+  "@ioredis/commands@^1.1.1":
+    version "1.2.0"
+    resolved "https://registry.npmjs.org/@ioredis/commands/-/commands-1.2.0.tgz"
+    integrity sha512-Sx1pU8EM64o2BrqNpEO1CNLtKQwyhuXuqyfH7oGKCk+1a33d2r5saW8zNwm3j6BTExtjrv2BxTgzzkMwts6vGg==
+  
   "@istanbuljs/load-nyc-config@^1.0.0":
     version "1.1.0"
     resolved "https://registry.npmjs.org/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz"
@@ -1729,6 +1746,16 @@ Lockfile:
     resolved "https://registry.npmjs.org/@types/config/-/config-3.3.0.tgz"
     integrity sha512-9kZSbl3/X3TVNowLCu5HFQdQmD+4287Om55avknEYkuo6R2dDrsp/EXEHUFvfYeG7m1eJ0WYGj+cbcUIhARJAQ==
   
+  "@types/connect-redis@^0.0.20":
+    version "0.0.20"
+    resolved "https://registry.yarnpkg.com/@types/connect-redis/-/connect-redis-0.0.20.tgz#cb5e33ee860bf8d6ea86b807c2499af238e2cd3f"
+    integrity sha512-3VTUzlsYtgsZlIt9G7BY2EyBr96JE93V9DB7JfItNZi6NzQzqyR+S0yLK5iPHd6X31CA7drUoCNNx3LCXn4XOw==
+    dependencies:
+      "@types/express" "*"
+      "@types/express-session" "*"
+      "@types/redis" "^2.8.0"
+      ioredis "^5.3.0"
+  
   "@types/connect@*":
     version "3.4.35"
     resolved "https://registry.npmjs.org/@types/connect/-/connect-3.4.35.tgz"
@@ -1753,7 +1780,14 @@ Lockfile:
       "@types/range-parser" "*"
       "@types/send" "*"
   
-  "@types/express@^4.17.17":
+  "@types/express-session@*", "@types/express-session@^1.17.7":
+    version "1.17.7"
+    resolved "https://registry.npmjs.org/@types/express-session/-/express-session-1.17.7.tgz"
+    integrity sha512-L25080PBYoRLu472HY/HNCxaXY8AaGgqGC8/p/8+BYMhG0RDOLQ1wpXOpAzr4Gi5TGozTKyJv5BVODM5UNyVMw==
+    dependencies:
+      "@types/express" "*"
+  
+  "@types/express@*", "@types/express@^4.17.17":
     version "4.17.17"
     resolved "https://registry.npmjs.org/@types/express/-/express-4.17.17.tgz"
     integrity sha512-Q4FmmuLGBG58btUnfS1c1r/NQdlp3DMfGDGig8WhfpA2YRUtEkxAjkZb0yvplJGYdF1fsQ81iMDcH24sSCNC/Q==
@@ -1853,6 +1887,13 @@ Lockfile:
     version "1.2.4"
     resolved "https://registry.npmjs.org/@types/range-parser/-/range-parser-1.2.4.tgz"
     integrity sha512-EEhsLsD6UsDM1yFhAvy0Cjr6VwmpMWqFBCb9w07wVugF7w9nfajxLuVmngTIpgS6svCnm6Vaw+MZhoDCKnOfsw==
+  
+  "@types/redis@^2.8.0":
+    version "2.8.32"
+    resolved "https://registry.npmjs.org/@types/redis/-/redis-2.8.32.tgz"
+    integrity sha512-7jkMKxcGq9p242exlbsVzuJb57KqHRhNl4dHoQu2Y5v9bCAbtIXXH0R3HleSQW4CTOqpHIYUW3t6tpUj4BVQ+w==
+    dependencies:
+      "@types/node" "*"
   
   "@types/send@*":
     version "0.17.1"
@@ -2301,7 +2342,7 @@ Lockfile:
       strip-ansi "^6.0.1"
       wrap-ansi "^7.0.0"
   
-  cluster-key-slot@1.1.2:
+  cluster-key-slot@1.1.2, cluster-key-slot@^1.1.0:
     version "1.1.2"
     resolved "https://registry.npmjs.org/cluster-key-slot/-/cluster-key-slot-1.1.2.tgz"
     integrity sha512-RMr0FhtfXemyinomL4hrWcYJxmX6deFdCxpJzhDttxgO1+bcCnkk+9drydLVDmAMG7NE6aN/fl4F7ucU/90gAA==
@@ -2362,10 +2403,10 @@ Lockfile:
     dependencies:
       json5 "^2.2.3"
   
-  connect-redis@^7.1.0:
-    version "7.1.0"
-    resolved "https://registry.npmjs.org/connect-redis/-/connect-redis-7.1.0.tgz"
-    integrity sha512-UaqO1EirWjON2ENsyau7N5lbkrdYBpS6mYlXSeff/OYXsd6EGZ+SXSmNPoljL2PSua8fgjAEaldSA73PMZQ9Eg==
+  connect-redis@6.1.3:
+    version "6.1.3"
+    resolved "https://registry.npmjs.org/connect-redis/-/connect-redis-6.1.3.tgz"
+    integrity sha512-aaNluLlAn/3JPxRwdzw7lhvEoU6Enb+d83xnokUNhC9dktqBoawKWL+WuxinxvBLTz6q9vReTnUDnUslaz74aw==
   
   console-control-strings@^1.0.0, console-control-strings@^1.1.0:
     version "1.1.0"
@@ -2398,6 +2439,11 @@ Lockfile:
     version "1.0.6"
     resolved "https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.0.6.tgz"
     integrity sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==
+  
+  cookie@0.4.2:
+    version "0.4.2"
+    resolved "https://registry.npmjs.org/cookie/-/cookie-0.4.2.tgz"
+    integrity sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==
   
   cookie@0.5.0:
     version "0.5.0"
@@ -2443,7 +2489,7 @@ Lockfile:
     dependencies:
       ms "2.0.0"
   
-  debug@4, debug@^4.1.0, debug@^4.1.1:
+  debug@4, debug@^4.1.0, debug@^4.1.1, debug@^4.3.4:
     version "4.3.4"
     resolved "https://registry.npmjs.org/debug/-/debug-4.3.4.tgz"
     integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
@@ -2465,7 +2511,12 @@ Lockfile:
     resolved "https://registry.npmjs.org/delegates/-/delegates-1.0.0.tgz"
     integrity sha512-bd2L678uiWATM6m5Z1VzNCErI3jiGzt6HGY8OVICs40JQq/HALfbyNJmp0UDakEY4pMMaN0Ly5om/B1VI/+xfQ==
   
-  depd@2.0.0:
+  denque@^2.1.0:
+    version "2.1.0"
+    resolved "https://registry.npmjs.org/denque/-/denque-2.1.0.tgz"
+    integrity sha512-HVQE3AAb/pxF8fQAoiqpvg9i3evqug3hoiwakOyZAwJm+6vZehbkYXZ0l4JxS+I3QxM97v5aaRNhj8v5oBhekw==
+  
+  depd@2.0.0, depd@~2.0.0:
     version "2.0.0"
     resolved "https://registry.npmjs.org/depd/-/depd-2.0.0.tgz"
     integrity sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==
@@ -2628,6 +2679,20 @@ Lockfile:
       jest-matcher-utils "^29.6.3"
       jest-message-util "^29.6.3"
       jest-util "^29.6.3"
+  
+  express-session@^1.17.3:
+    version "1.17.3"
+    resolved "https://registry.npmjs.org/express-session/-/express-session-1.17.3.tgz"
+    integrity sha512-4+otWXlShYlG1Ma+2Jnn+xgKUZTMJ5QD3YvfilX3AcocOAbIkVylSWEklzALe/+Pu4qV6TYBj5GwOBFfdKqLBw==
+    dependencies:
+      cookie "0.4.2"
+      cookie-signature "1.0.6"
+      debug "2.6.9"
+      depd "~2.0.0"
+      on-headers "~1.0.2"
+      parseurl "~1.3.3"
+      safe-buffer "5.2.1"
+      uid-safe "~2.1.5"
   
   express@^4.18.2:
     version "4.18.2"
@@ -2982,6 +3047,21 @@ Lockfile:
     version "2.0.4"
     resolved "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
     integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
+  
+  ioredis@^5.3.0:
+    version "5.3.2"
+    resolved "https://registry.npmjs.org/ioredis/-/ioredis-5.3.2.tgz"
+    integrity sha512-1DKMMzlIHM02eBBVOFQ1+AolGjs6+xEcM4PDL7NqOS6szq7H9jSaEkIUH6/a5Hl241LzW6JLSiAbNvTQjUupUA==
+    dependencies:
+      "@ioredis/commands" "^1.1.1"
+      cluster-key-slot "^1.1.0"
+      debug "^4.3.4"
+      denque "^2.1.0"
+      lodash.defaults "^4.2.0"
+      lodash.isarguments "^3.1.0"
+      redis-errors "^1.2.0"
+      redis-parser "^3.0.0"
+      standard-as-callback "^2.1.0"
   
   ipaddr.js@1.9.1:
     version "1.9.1"
@@ -3480,7 +3560,7 @@ Lockfile:
   
   jest@^29.6.3:
     version "29.6.3"
-    resolved "https://registry.npmjs.org/jest/-/jest-29.6.3.tgz"
+    resolved "https://registry.yarnpkg.com/jest/-/jest-29.6.3.tgz#118cf081d440d31b21989f61bfcd8b7797ca6a01"
     integrity sha512-alueLuoPCDNHFcFGmgETR4KpQ+0ff3qVaiJwxQM4B5sC0CvXcgg4PEi7xrDkxuItDmdz/FVc7SSit4KEu8GRvw==
     dependencies:
       "@jest/core" "^29.6.3"
@@ -3574,6 +3654,16 @@ Lockfile:
     integrity sha512-t7hw9pI+WvuwNJXwk5zVHpyhIqzg2qTlklJOf0mVxGSbe3Fp2VieZcduNYjaLDoy6p9uGpQEGWG87WpMKlNq8g==
     dependencies:
       p-locate "^4.1.0"
+  
+  lodash.defaults@^4.2.0:
+    version "4.2.0"
+    resolved "https://registry.npmjs.org/lodash.defaults/-/lodash.defaults-4.2.0.tgz"
+    integrity sha512-qjxPLHd3r5DnsdGacqOMU6pb/avJzdh9tFX2ymgoZE27BmjXrNy/y4LoaiTeAb+O3gL8AfpJGtqfX/ae2leYYQ==
+  
+  lodash.isarguments@^3.1.0:
+    version "3.1.0"
+    resolved "https://registry.npmjs.org/lodash.isarguments/-/lodash.isarguments-3.1.0.tgz"
+    integrity sha512-chi4NHZlZqZD18a0imDHnZPrDeBbTtVN7GXMwuGdRH9qotxAjYs3aVLKc7zNOG9eddR5Ksd8rvFEBc9SsggPpg==
   
   lodash@^4.17.21:
     version "4.17.21"
@@ -3729,15 +3819,10 @@ Lockfile:
     resolved "https://registry.npmjs.org/ms/-/ms-2.1.3.tgz"
     integrity sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==
   
-  nanoid@*:
-    version "4.0.2"
-    resolved "https://registry.npmjs.org/nanoid/-/nanoid-4.0.2.tgz"
-    integrity sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==
-  
-  nanoid@^4.0.2:
-    version "4.0.2"
-    resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-4.0.2.tgz#140b3c5003959adbebf521c170f282c5e7f9fb9e"
-    integrity sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==
+  nanoid@*, nanoid@3.1.30:
+    version "3.1.30"
+    resolved "https://registry.npmjs.org/nanoid/-/nanoid-3.1.30.tgz"
+    integrity sha512-zJpuPDwOv8D2zq2WRoMe1HsfZthVewpel9CAvTfc/2mBD1uUT/agc5f7GHGWXlYkFvi1mVxe4IjvP2HNrop7nQ==
   
   natural-compare@^1.4.0:
     version "1.4.0"
@@ -3826,6 +3911,11 @@ Lockfile:
     integrity sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==
     dependencies:
       ee-first "1.1.1"
+  
+  on-headers@~1.0.2:
+    version "1.0.2"
+    resolved "https://registry.npmjs.org/on-headers/-/on-headers-1.0.2.tgz"
+    integrity sha512-pZAE+FJLoyITytdqK0U5s+FIpjN0JP3OzFi/u8Rx+EV5/W+JTWGXG8xFzevE7AjBfDqHv/8vL8qQsIhHnqRkrA==
   
   once@^1.3.0, once@^1.3.1, once@^1.4.0:
     version "1.4.0"
@@ -4179,6 +4269,11 @@ Lockfile:
     resolved "https://registry.npmjs.org/quick-format-unescaped/-/quick-format-unescaped-4.0.4.tgz"
     integrity sha512-tYC1Q1hgyRuHgloV/YXs2w15unPVh8qfu/qCTfhTYamaw7fyhumKa2yGpdSo87vY32rIclj+4fWYQXUMs9EHvg==
   
+  random-bytes@~1.0.0:
+    version "1.0.0"
+    resolved "https://registry.npmjs.org/random-bytes/-/random-bytes-1.0.0.tgz"
+    integrity sha512-iv7LhNVO047HzYR3InF6pUcUsPQiHTM1Qal51DcGSuZFBil1aBBWG5eHPNek7bvILMaYJ/8RU1e8w1AMdHmLQQ==
+  
   range-parser@~1.2.1:
     version "1.2.1"
     resolved "https://registry.npmjs.org/range-parser/-/range-parser-1.2.1.tgz"
@@ -4230,6 +4325,18 @@ Lockfile:
     version "0.2.0"
     resolved "https://registry.npmjs.org/real-require/-/real-require-0.2.0.tgz"
     integrity sha512-57frrGM/OCTLqLOAh0mhVA9VBMHd+9U7Zb2THMGdBUoZVOtGbJzjxsYGDJ3A9AYYCP4hn6y1TVbaOfzWtm5GFg==
+  
+  redis-errors@^1.0.0, redis-errors@^1.2.0:
+    version "1.2.0"
+    resolved "https://registry.npmjs.org/redis-errors/-/redis-errors-1.2.0.tgz"
+    integrity sha512-1qny3OExCf0UvUV/5wpYKf2YwPcOqXzkwKKSmKHiE6ZMQs5heeE/c8eXK+PNllPvmjgAbfnsbpkGZWy8cBpn9w==
+  
+  redis-parser@^3.0.0:
+    version "3.0.0"
+    resolved "https://registry.npmjs.org/redis-parser/-/redis-parser-3.0.0.tgz"
+    integrity sha512-DJnGAeenTdpMEH6uAJRK/uiyEIH9WVsUmoLwzudwGJUwZPp80PDBWPHXSAGNPwNvIXAbe7MSUB1zQFugFml66A==
+    dependencies:
+      redis-errors "^1.0.0"
   
   redis@^4.6.7:
     version "4.6.7"
@@ -4444,6 +4551,11 @@ Lockfile:
     integrity sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==
     dependencies:
       escape-string-regexp "^2.0.0"
+  
+  standard-as-callback@^2.1.0:
+    version "2.1.0"
+    resolved "https://registry.npmjs.org/standard-as-callback/-/standard-as-callback-2.1.0.tgz"
+    integrity sha512-qoRRSyROncaz1z0mvYqIE4lCd9p2R90i6GxW3uZv5ucSu8tU7B5HXUP1gG8pVZsYNVaXjk8ClXHPttLyxAL48A==
   
   statuses@2.0.1:
     version "2.0.1"
@@ -4674,6 +4786,13 @@ Lockfile:
     version "5.1.6"
     resolved "https://registry.npmjs.org/typescript/-/typescript-5.1.6.tgz"
     integrity sha512-zaWCozRZ6DLEWAWFrVDz1H6FVXzUSfTy5FUMWsQlU8Ym5JP9eO4xkTIROFCQvhQf61z6O/G6ugw3SgAnvvm+HA==
+  
+  uid-safe@~2.1.5:
+    version "2.1.5"
+    resolved "https://registry.npmjs.org/uid-safe/-/uid-safe-2.1.5.tgz"
+    integrity sha512-KPHm4VL5dDXKz01UuEd88Df+KzynaohSL9fBh096KWAxSKZQDI2uBrVqtvRM4rwrIrRRKsdLNML/lnaaVSRioA==
+    dependencies:
+      random-bytes "~1.0.0"
   
   unpipe@1.0.0, unpipe@~1.0.0:
     version "1.0.0"

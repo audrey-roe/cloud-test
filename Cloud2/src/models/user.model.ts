@@ -38,8 +38,6 @@ export interface UserInput {
   name: string;
   email: string;
   password: string;
-  files: FileInput[];
-  folders: FolderInput[];
 }
 
 export class Admin extends User {

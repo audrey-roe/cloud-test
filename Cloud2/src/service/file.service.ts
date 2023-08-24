@@ -58,13 +58,13 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
     return response.Body as unknown as Buffer;
 };
 
-export const uploadFileToDatabase = async (fileName: string, fileUrl: string): Promise<void> => {
+export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId:number): Promise<void> => {
     const client = await pool.connect();
     try {
-        await client.query('BEGIN'); // Start a transaction
+        await client.query('BEGIN');
 
-        const insertQuery = 'INSERT INTO files (file_name, file_url) VALUES ($1, $2) RETURNING id';
-        const insertValues = [fileName, fileUrl];
+        const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4) RETURNING id';
+        const insertValues = [fileName, mediaType, fileUrl, userId];
         const result = await client.query(insertQuery, insertValues);
 
         const fileId = result.rows[0].id;
@@ -174,4 +174,4 @@ export const getFileHistory = async (fileId: number): Promise<QueryResult> => {
     } catch (error) {
       throw error;
     } 
-  };
+};
