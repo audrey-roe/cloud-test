@@ -1,7 +1,8 @@
 import { createUser } from '../service/user.service';
 import { UserInput } from '../models/user.model';
 import { createUserHandler } from '../controller/user.controller';
-// import userService from  '../service/user.service' 
+import * as userService from '../service/user.service'; 
+import {Response, Request, NextFunction } from 'express';
 describe('User', () => {
   describe('UserService', () => {
     describe('createUser', () => {
@@ -129,48 +130,59 @@ describe('User', () => {
       });
     });
   })
-  describe('UserController', ()=>{
-        // Tests that the function successfully creates a user and returns a token
-        it('should create a user and return a token', async () => {
-          const req = {
-            body: {
-              name: 'John Doe',
-              email: 'johndoe@example.com',
-              password: 'password123'
-            }
-          };
-          const res = {
-            status: jest.fn().mockReturnThis(),
-            json: jest.fn()
-          };
-          const next = jest.fn();
+  describe('UserController', () => {
+    jest.mock('../service/user.service'); 
 
-          const createUserMock = jest.spyOn(userService, 'createUser').mockResolvedValueOnce({
-            id: '1',
-            name: 'John Doe',
-            email: 'johndoe@example.com',
-            password: 'hashedPassword'
-          });
-          process.env.jwtSecret = 'secret';
+    describe('createUserHandler', () => {
+      const userInput: UserInput = {
+        name: 'John Doe',
+        email: 'johndoe@example.com',
+        password: 'password123',
+        is_admin: false
 
-          await createUserHandler(req, res, next);
+      };
+      const existingUserResult = {
+        rows: []
+      };
+      const insertUserResult = {
+        rows: [{ id: 1, ...userInput }]
+      };
 
-          expect(createUserMock).toHaveBeenCalledWith({
-            name: 'John Doe',
-            email: 'johndoe@example.com',
-            password: 'password123'
-          }, client);
-          expect(res.status).toHaveBeenCalledWith(201);
-          expect(res.json).toHaveBeenCalledWith({
-            user: {
-              id: '1',
-              name: 'John Doe',
-              email: 'johndoe@example.com',
-              password: 'hashedPassword'
-            },
-            token: expect.any(String)
-          });
-        });
+      const mockQuery = jest.fn()
+        .mockResolvedValueOnce(existingUserResult)
+        .mockResolvedValueOnce(insertUserResult);
+
+      const mockClient = {
+        query: mockQuery
+      };
+      // Tests that the function successfully creates a user and returns a token
+      it('should create a user with valid input', async () => {
+        // Arrange
+        const req = {
+          body: userInput,
+        } as Request; // Provide a mock request object
+    
+        const res = {
+          status: jest.fn().mockReturnThis(),
+          json: jest.fn(),
+          send: jest.fn(),
+        } as unknown as Response; // Provide a mock response object
+    
+        userService.createUser = jest.fn().mockResolvedValue(insertUserResult);
+    
+        // Act
+        await createUserHandler(req, res, jest.fn() as NextFunction);
+    
+        // Assert
+        expect(userService.createUser).toHaveBeenCalledWith({ ...userInput, is_admin: false }, mockClient); // Check if userService.createUser was called with the expected input
+        expect(res.status).toHaveBeenCalledWith(201); // Check if the response status was set correctly
+        expect(res.json).toHaveBeenCalledWith({
+          user: insertUserResult,
+          token: expect.any(String), // Assuming you are generating a token
+        }); // Check if the response was correctly sent
+      });
+    })
+
   })
 })
 
