@@ -29,12 +29,6 @@ const s3 = new S3Client({
     },
 });
 
-// export const bucketParams = {
-//     Bucket: "example-bucket-name",
-//     Key: "example.txt",
-//     Body: "content"
-// };
-
 export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) => {
     try {
         const params = {
@@ -67,10 +61,22 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string): Promise<void> => {
     const client = await pool.connect();
     try {
-        const query = 'INSERT INTO files (file_name, file_url) VALUES ($1, $2)';
-        await client.query(query, [fileName, fileUrl]);
-    } finally {
-        client.release();
+        await client.query('BEGIN'); // Start a transaction
+
+        const insertQuery = 'INSERT INTO files (file_name, file_url) VALUES ($1, $2) RETURNING id';
+        const insertValues = [fileName, fileUrl];
+        const result = await client.query(insertQuery, insertValues);
+
+        const fileId = result.rows[0].id;
+
+        const historyQuery = 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)';
+        const historyValues = [fileId, 'create'];
+        await client.query(historyQuery, historyValues);
+
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
     }
 };
 
@@ -79,9 +85,17 @@ export const getFileFromDatabase = async (fileName: string): Promise<QueryResult
     try {
         const query = 'SELECT * FROM files WHERE file_name = $1';
         const result = await client.query(query, [fileName]);
+
+        if (result.rows.length > 0) {
+            const fileId = result.rows[0].id;
+            const historyQuery = 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)';
+            const historyValues = [fileId, 'download'];
+            await client.query(historyQuery, historyValues);
+        }
+
         return result;
-    } finally {
-        client.release();
+    } catch (error) {
+        throw error;
     }
 };
 
@@ -98,9 +112,6 @@ export const streamVideoOrAudio = async (res: any, fileName: string): Promise<vo
     const readStream = fs.createReadStream(fileStream);
     readStream.pipe(res);
 };
-
-
-// for foldr creation\
 
 export async function createFolder(userId: number, name: string, parentFolderId?: number): Promise<Folder> {
 
@@ -132,7 +143,7 @@ export async function markAndDeleteUnsafeFile(fileId: number) {
         const fileResult = await client.query(getFileQuery, getFileValues);
         if (fileResult.rows.length === 0) {
             throw new Error('File not found.');
-          }
+        }
         const file = fileResult.rows[0];
 
         if (file.fileType === 'image' || file.fileType === 'video') {
@@ -143,14 +154,24 @@ export async function markAndDeleteUnsafeFile(fileId: number) {
             const deleteQuery = 'DELETE FROM files WHERE id = $1';
             await client.query(deleteQuery, updateValues);
 
-            await client.query('COMMIT'); 
+            await client.query('COMMIT');
         } else {
             throw new Error('File type is not supported for marking as unsafe and deleting.');
         }
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
-    } finally {
-        client.release(); 
     }
 }
+
+export const getFileHistory = async (fileId: number): Promise<QueryResult> => {
+    const client = await pool.connect();
+
+    try {
+      const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
+      const result = await client.query(query, [fileId]);
+      return result;
+    } catch (error) {
+      throw error;
+    } 
+  };

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, streamVideoOrAudio, createFolder, markAndDeleteUnsafeFile } from '../service/file.service';
+import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, streamVideoOrAudio, createFolder, markAndDeleteUnsafeFile, getFileHistory } from '../service/file.service';
 import { Pool } from 'pg';
 import logger from '../utils/logger';
 
@@ -69,4 +69,16 @@ export async function handleCreateFolder(req: Request, res: Response) {
           res.status(500).json({ error: 'An error occurred while marking and deleting the file.' });
         }
       }
+  }
+
+
+  export async function getFileHistoryController(req: Request, res: Response) {
+    const fileId = parseInt(req.params.fileId);
+  
+    try {
+      const history = await getFileHistory(fileId);
+      res.status(200).json({ history: history.rows });
+    } catch (error) {
+      res.status(500).json({ error: 'An error occurred while retrieving file history.' });
+    }
   }

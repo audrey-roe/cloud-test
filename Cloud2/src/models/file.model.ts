@@ -1,4 +1,4 @@
-import { Admin } from "./user.model";
+import { User } from "./user.model";
 
 export class File {
     id: number | undefined;
@@ -13,7 +13,9 @@ export class File {
     data: string | undefined;
     isUnsafe: boolean | undefined;
     isPendingDeletion: boolean | undefined;
-    pendingReviewBy?: Admin;
+    pendingReviewBy?: User;
+    ownerId: number | undefined;
+
   }
   
   export interface FileInput {
@@ -28,5 +30,6 @@ export class File {
     data: string;
     isUnsafe: boolean;
     isPendingDeletion: boolean;
+    
   }
   
