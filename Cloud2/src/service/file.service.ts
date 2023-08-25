@@ -67,7 +67,6 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<void> => {
     try {
         await client.query('BEGIN');
-            console.log('here?')
         const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4) RETURNING id';
         const insertValues = [fileName, mediaType, fileUrl, userId];
         const result = await client.query(insertQuery, insertValues);
@@ -110,12 +109,9 @@ export async function createFolder(userId: number, name: string, client: any, pa
       VALUES ($1, $2, $3)
       RETURNING *
     `;
-
     const values = [name, userId, parentFolderId];
 
-
     try {
-
         const result = await client.query(queryText, values);
         console.log(values)
 
@@ -124,9 +120,6 @@ export async function createFolder(userId: number, name: string, client: any, pa
         console.error("Database Query Error:", error.message); // Log the error message
         console.error(error.stack); // Log the stack trace for more detailed debugging
         throw error;
-    }finally {
-
-        client.release();
     }
 }
 
