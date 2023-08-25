@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, streamVideoOrAudio, createFolder, markAndDeleteUnsafeFile, getFileHistory } from '../service/file.service';
+import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, streamVideoOrAudio, createFolder, markAndDeleteUnsafeFile, getFileHistory, downloadFromS3 } from '../service/file.service';
 import { Pool } from 'pg';
 import logger from '../utils/logger';
 
@@ -37,15 +37,29 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
 };
 
 export const getFileHandler = async (req: Request, res: Response) => {
-  const fileName = req.params.fileName;
+  const fileId = req.params.fileId;
   try {
-    const result = await getFileFromDatabase(fileName);
-    res.status(200).json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+      const result = await getFileFromDatabase(fileId);
+
+      if (result.rows.length === 0) {
+          return res.status(404).json({ message: 'File not found' });
+      }
+
+      const fileName = result.rows[0].file_name;
+      const fileBuffer = await downloadFromS3(fileName);
+      res.setHeader('Content-Disposition', 'attachment; filename=' + fileName);
+      res.setHeader('Content-Type', result.rows[0].media_type); 
+      res.send(fileBuffer);
+  } catch (error: any) {
+    if (error.message === 'The specified key does not exist.') {
+      res.status(404).json({ error: `The file you are looking for doesn't exist` });
+    } else {
+      res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
   }
 };
+
+
 
 export const streamFileHandler = async (req: Request, res: Response) => {
   const fileName = req.params.fileName;

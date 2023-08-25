@@ -13,15 +13,6 @@ const pool = new Pool({
     port: 5432,
 });
 
-// const s3 = new S3Client({
-//     region: "auto",
-//     endpoint: `https://${process.env.s3_ACCOUNT_ID!}r2.cloudflarestorage.com/`,
-//     credentials: {
-//         accessKeyId: process.env.s3_ACCESS_KEY_ID!,
-//         secretAccessKey: process.env.s3_SECRET_ACCESS_KEY!,
-//     },
-// });
-
 const getS3Client = () => {
     return new S3Client({
         region: "auto",
@@ -34,22 +25,17 @@ const getS3Client = () => {
 };
 export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string) => {
     const s3 = getS3Client();
-
-    logger.info("outside");
-
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
         logger.error("AWS credentials are not set!");
         throw new Error("AWS credentials are missing");
     }
     try {
-        logger.info("here");
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: fileName,
             Body: fileStream,
             ContentType: contentType,
         };
-        logger.info('here')
         const response = await s3.send(new PutObjectCommand(params));
         logger.info(
             "Successfully uploaded object: " +
@@ -58,19 +44,42 @@ export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentTy
             params.Key
         );
         return response;
-    } catch (err:any) {
+    } catch (err: any) {
         logger.error("Error uploading to S3:", err.message, "\nStack trace:", err.stack);
-        throw err;  // Rethrow the error so it can be caught and handled further up the chain
+        throw err;
     }
 };
-
+const asyncIteratorToBuffer = async (asyncIterator: AsyncIterable<Uint8Array>): Promise<Buffer> => {
+    const chunks: Uint8Array[] = [];
+    for await (const chunk of asyncIterator) {
+        chunks.push(chunk);
+    }
+    return Buffer.concat(chunks);
+};
 export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
-    const params = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: fileName,
+    const s3 = getS3Client();
+    if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
+        logger.error("AWS credentials are not set!");
+        throw new Error("AWS credentials are missing");
+    }
+    try {
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: fileName,
+        };
+        const response = await s3.send(new GetObjectCommand(params));
+        let fileBuffer: Buffer;
+
+
+        const body = response.Body as unknown as AsyncIterable<Uint8Array>;
+        if (body) {
+            const fileBuffer = await asyncIteratorToBuffer(body);
+            return fileBuffer;
+        }
+        return fileBuffer!;
+    } catch (err: any) {
+        throw err;
     };
-    const response = await s3.send(new GetObjectCommand(params));
-    return response.Body as unknown as Buffer;
 };
 
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number): Promise<void> => {
@@ -95,14 +104,13 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
     }
 };
 
-export const getFileFromDatabase = async (fileName: string): Promise<QueryResult> => {
+export const getFileFromDatabase = async (fileId: string): Promise<QueryResult> => {
     const client = await pool.connect();
     try {
-        const query = 'SELECT * FROM files WHERE file_name = $1';
-        const result = await client.query(query, [fileName]);
+        const query = 'SELECT * FROM files WHERE id = $1';
+        const result = await client.query(query, [fileId]);
 
         if (result.rows.length > 0) {
-            const fileId = result.rows[0].id;
             const historyQuery = 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)';
             const historyValues = [fileId, 'download'];
             await client.query(historyQuery, historyValues);
