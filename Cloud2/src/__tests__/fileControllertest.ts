@@ -107,14 +107,11 @@ describe('File', () => {
                 await expect(uploadFileHandler(mockRequest as Request, mockResponse as Response))
                     .rejects.toThrow('File size exceeds the 200MB limit');
             });
-
-
             it('should throw an error if no file is provided', async () => {
                 mockRequest.file = undefined;
 
                 await expect(uploadFileHandler(mockRequest as Request, mockResponse as Response)).rejects.toThrow('Upload file failed');
             });
-
             it('should return 404 if S3 upload fails', async () => {
                 mockRequest.file = {
                     originalname: 'testFile.jpg',
@@ -152,7 +149,6 @@ describe('File', () => {
                 expect(mockResponse.status).toHaveBeenCalledWith(404);
                 expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Failed to upload file to S3' });
             });
-
             it('should return 500 for generic errors', async () => {
                 mockRequest.file = {
                     originalname: 'testFile.jpg',

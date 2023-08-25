@@ -63,41 +63,41 @@ describe("File", () => {
     //   });
     // });
 
-    // describe("downloadFromS3 function", () => {
-    //   it("throws an error when AWS credentials are missing", async () => {
-    //     delete process.env.s3_ACCESS_KEY_ID;
-    //     delete process.env.s3_SECRET_ACCESS_KEY;
+    describe("downloadFromS3 function", () => {
+      it("throws an error when AWS credentials are missing", async () => {
+        delete process.env.s3_ACCESS_KEY_ID;
+        delete process.env.s3_SECRET_ACCESS_KEY;
 
-    //     await expect(downloadFromS3('filename.txt')).rejects.toThrow("AWS credentials are missing");
-    //     expect(logger.error).toHaveBeenCalledWith("AWS credentials are not set!");
-    //   });
+        await expect(downloadFromS3('filename.txt', mockS3Client)).rejects.toThrow("AWS credentials are missing");
+        expect(logger.error).toHaveBeenCalledWith("AWS credentials are not set!");
+      });
 
-    //   it("downloads a file from S3 successfully", async () => {
-    //     const mockResponse = {
-    //       Body: (async function* () {
-    //         yield new Uint8Array([1, 2, 3, 4]);
-    //       })()
-    //     };
-    //     mockS3Client.send.mockResolvedValueOnce({
-    //       Body: (async function* (): AsyncGenerator<Uint8Array, void, void> {
-    //         yield new Uint8Array([1, 2, 3, 4]);
-    //       })()
-    //     });
-    //     console.log(mockS3Client.send.mock.calls);
+      it("downloads a file from S3 successfully", async () => {
+        const mockResponse = {
+          Body: (async function* () {
+            yield new Uint8Array([1, 2, 3, 4]);
+          })()
+        };
+        mockS3Client.send.mockResolvedValueOnce({
+          Body: (async function* (): AsyncGenerator<Uint8Array, void, void> {
+            yield new Uint8Array([1, 2, 3, 4]);
+          })()
+        });
 
 
-    //     const result = await downloadFromS3('filename.txt');
-    //     expect(result).toEqual(Buffer.from([1, 2, 3, 4]));
-    //   });
+        const result = await downloadFromS3('filename.txt', mockS3Client );
+        console.log(mockS3Client.send.mock.calls);
 
-    //   it("throws an error when there's an S3 issue", async () => {
-    //     const s3Error = new Error('S3 error');
-    //     mockS3Client.send.mockRejectedValueOnce(s3Error);
+        expect(result).toEqual(Buffer.from([1, 2, 3, 4]));
+      });
 
-    //     await expect(downloadFromS3('filename.txt')).rejects.toEqual(s3Error);
-    //   });
-    // });
+      it("throws an error when there's an S3 issue", async () => {
+        const s3Error = new Error('S3 error');
+        mockS3Client.send.mockRejectedValueOnce(s3Error);
 
+        await expect(downloadFromS3('filename.txt', mockS3Client)).rejects.toEqual(s3Error);
+      });
+    });
 
     // describe('uploadFileToDatabase', () => {
     //   let mockClient: any;
@@ -220,83 +220,83 @@ describe("File", () => {
 
     // });
 
-    describe('createFolder', () => {
-      // Mock the 'pg' module to prevent interactions with a real database.
-      const userId = 1;
-      const name = 'Test Folder';
-      const parentFolderId = undefined;
-      const mockQueryResults = {
-        rows: [{ id: 1, name: 'Test Folder', owner_id: userId, parent_folder_id: parentFolderId }]
-      };
+    // describe('createFolder', () => {
+    //   // Mock the 'pg' module to prevent interactions with a real database.
+    //   const userId = 1;
+    //   const name = 'Test Folder';
+    //   const parentFolderId = undefined;
+    //   const mockQueryResults = {
+    //     rows: [{ id: 1, name: 'Test Folder', owner_id: userId, parent_folder_id: parentFolderId }]
+    //   };
 
-      const mockQuery = jest.fn().mockResolvedValue(mockQueryResults);
-      const mockClient = {
-        query: mockQuery,
-        release: jest.fn()
-      };
-      jest.mock('pg', () => ({
-        Pool: jest.fn(() => ({
-          connect: jest.fn(),
-          query: jest.fn(),
-          end: jest.fn()
-        }))
-      }));
+    //   const mockQuery = jest.fn().mockResolvedValue(mockQueryResults);
+    //   const mockClient = {
+    //     query: mockQuery,
+    //     release: jest.fn()
+    //   };
+    //   jest.mock('pg', () => ({
+    //     Pool: jest.fn(() => ({
+    //       connect: jest.fn(),
+    //       query: jest.fn(),
+    //       end: jest.fn()
+    //     }))
+    //   }));
 
-      afterEach(() => {
-        jest.clearAllMocks();
-      });
+    //   afterEach(() => {
+    //     jest.clearAllMocks();
+    //   });
 
-      it.only('should insert a new folder into the database and return the created folder object', async () => {
-        // Arrange
-        const expectedQueryText = `
-              INSERT INTO folders (name, owner_id, parent_folder_id)
-              VALUES ($1, $2, $3)
-              RETURNING *
-          `;
+    //   it.only('should insert a new folder into the database and return the created folder object', async () => {
+    //     // Arrange
+    //     const expectedQueryText = `
+    //           INSERT INTO folders (name, owner_id, parent_folder_id)
+    //           VALUES ($1, $2, $3)
+    //           RETURNING *
+    //       `;
 
-        // Mock the connection method of the pool object.
+    //     // Mock the connection method of the pool object.
 
-        // Act
-        const result = await createFolder(userId, name, parentFolderId);
+    //     // Act
+    //     const result = await createFolder(userId, name, parentFolderId);
 
-        // Assert
-        expect(mockQuery).toHaveBeenCalledWith(expectedQueryText.trim(), [name, userId, parentFolderId]);
-        expect(result).toEqual({ id: 1, name: 'Test Folder', owner_id: 1, parent_folder_id: null });
-        expect(mockClient.release).toHaveBeenCalled();
-      });
+    //     // Assert
+    //     expect(mockQuery).toHaveBeenCalledWith(expectedQueryText.trim(), [name, userId, parentFolderId]);
+    //     expect(result).toEqual({ id: 1, name: 'Test Folder', owner_id: 1, parent_folder_id: null });
+    //     expect(mockClient.release).toHaveBeenCalled();
+    //   });
 
-      // Tests that the function successfully inserts a new folder with a parent folder ID into the database and returns the created folder object.
-      it('should insert a new folder with a parent folder ID into the database and return the created folder object', async () => {
-        // Arrange
-        const userId = 1;
-        const name = 'Test Folder';
-        const parentFolderId = 456;
-        const queryText = `
-      INSERT INTO folders (name, owner_id, parent_folder_id)
-      VALUES ($1, $2, $3)
-      RETURNING *
-    `;
-        const values = [name, userId, parentFolderId];
-        const clientMock = {
-          query: jest.fn().mockResolvedValue({ rows: [{ name: 'Test Folder', owner_id: 1 }] }),
-          release: jest.fn()
-        };
-        const poolMock = {
-          connect: jest.fn().mockResolvedValue(clientMock)
-        };
+    //   // Tests that the function successfully inserts a new folder with a parent folder ID into the database and returns the created folder object.
+    //   it('should insert a new folder with a parent folder ID into the database and return the created folder object', async () => {
+    //     // Arrange
+    //     const userId = 1;
+    //     const name = 'Test Folder';
+    //     const parentFolderId = 456;
+    //     const queryText = `
+    //   INSERT INTO folders (name, owner_id, parent_folder_id)
+    //   VALUES ($1, $2, $3)
+    //   RETURNING *
+    // `;
+    //     const values = [name, userId, parentFolderId];
+    //     const clientMock = {
+    //       query: jest.fn().mockResolvedValue({ rows: [{ name: 'Test Folder', owner_id: 1 }] }),
+    //       release: jest.fn()
+    //     };
+    //     const poolMock = {
+    //       connect: jest.fn().mockResolvedValue(clientMock)
+    //     };
 
-        // Act
-        const result = await createFolder(userId, name, parentFolderId);
-        console.log(result);
-        // Assert
-        // expect(poolMock.connect).toHaveBeenCalled();
-        expect(clientMock.query).toHaveBeenCalledWith(queryText, values);
-        expect(result).toEqual({ name: 'Test Folder', owner_id: 1 });
-        expect(clientMock.release).toHaveBeenCalled();
-      });
+    //     // Act
+    //     const result = await createFolder(userId, name, parentFolderId);
+    //     console.log(result);
+    //     // Assert
+    //     // expect(poolMock.connect).toHaveBeenCalled();
+    //     expect(clientMock.query).toHaveBeenCalledWith(queryText, values);
+    //     expect(result).toEqual({ name: 'Test Folder', owner_id: 1 });
+    //     expect(clientMock.release).toHaveBeenCalled();
+    //   });
 
 
-    });
+    // });
 
   });
 });

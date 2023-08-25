@@ -1,24 +1,11 @@
 import { Pool, QueryResult } from 'pg';
 import { PutObjectCommand, S3Client, S3, GetObjectCommand } from "@aws-sdk/client-s3";
-import fs from 'fs';
-import path from 'path';
 import logger from '../utils/logger';
 import { Folder } from '../models/folder.models';
 
 
-
-export const getS3Client = () => {
-    return new S3Client({
-        region: "auto",
-        endpoint: `https://${process.env.s3_ACCOUNT_ID!}.r2.cloudflarestorage.com/`,
-        credentials: {
-            accessKeyId: process.env.s3_ACCESS_KEY_ID!,
-            secretAccessKey: process.env.s3_SECRET_ACCESS_KEY!,
-        },
-    });
-};
-export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string) => {
-    const s3 = getS3Client();
+export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string, s3:any) => {
+    // const s3 = getS3Client();
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
         logger.error("AWS credentials are not set!");
         throw new Error("AWS credentials are missing");
@@ -50,8 +37,8 @@ const asyncIteratorToBuffer = async (asyncIterator: AsyncIterable<Uint8Array>): 
     }
     return Buffer.concat(chunks);
 };
-export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
-    const s3 = getS3Client();
+export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> => {
+    // const s3 = getS3Client();
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
         logger.error("AWS credentials are not set!");
         throw new Error("AWS credentials are missing");
@@ -115,19 +102,7 @@ export const getFileFromDatabase = async (fileId: string, client: any): Promise<
     }
 };
 
-export const streamVideoOrAudio = async (res: any, fileName: string, client: any): Promise<void> => {
-    const fileStream = await downloadFromS3(fileName);
-    const extname = path.extname(fileName);
-    const contentType = extname === '.mp4' ? 'video/mp4' : 'audio/mpeg';
 
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Length', fileStream.length);
-    res.setHeader('Accept-Ranges', 'bytes');
-    res.setHeader('Cache-Control', 'public, max-age=31536000');
-
-    const readStream = fs.createReadStream(fileStream);
-    readStream.pipe(res);
-};
 
 export async function createFolder(userId: number, name: string, client: any, parentFolderId?: number): Promise<Folder> {
     const queryText = `
