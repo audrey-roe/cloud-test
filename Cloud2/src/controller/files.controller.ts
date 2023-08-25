@@ -21,10 +21,8 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
 
   try {
     const s3Response = await uploadToS3(fileStream, filename, contentType);
-    logger.info(s3Response);
     if (s3Response && s3Response.ETag) {
       const fileUrl = s3Response.ETag;
-      logger.info(user);
       await uploadFileToDatabase(filename, fileUrl, mediaType, user);
 
       res.status(201).json({ message: 'File uploaded successfully' });
@@ -48,10 +46,8 @@ export const getFileHandler = async (req: Request, res: Response) => {
   const fileId = req.params.fileId;
   try {
       const result = await getFileFromDatabase(fileId);
-      console.log('outside 404 condition');
 
       if (result.rows.length === 0) {
-          console.log('Inside 404 condition');
           return res.status(404).json({ message: 'File not found' });
       }
 
@@ -82,8 +78,7 @@ export const streamFileHandler = async (req: Request, res: Response) => {
 export async function handleCreateFolder(req: Request, res: Response) {
   try {
     const { name, parentFolderId } = req.body;
-    //   const userId = res.locals.user.id;
-    const userId = 1
+    const userId = res.locals.user.id;
     const newFolder = await createFolder(userId, name, parentFolderId);
 
     return res.status(201).json(newFolder);
