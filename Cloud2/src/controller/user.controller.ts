@@ -1,8 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { createUser, login, deleteUserByEmail } from '../service/user.service';
 import logger from '../utils/logger';
-import { User, UserInput} from '../models/user.model';
-import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
 import { generateToken } from '../middleware/tokenService';
 import {createUserSchema} from '../schema/user.schema';
@@ -76,3 +74,22 @@ export const deleteUserHandler = async (req: Request, res: Response, next: NextF
         return res.status(500).send(error.message);
     }
 };
+
+export async function getUserFromDatabase(userId: number): Promise<any | null> {
+    const queryText = 'SELECT * FROM users WHERE id = $1';
+    const values = [userId];
+  
+    try {
+      const res = await client.query(queryText, values);
+      
+      if (res.rowCount === 0) {
+        // No user found with the given userId
+        return null;
+      }
+  
+      return res.rows[0]; // Return the found user
+    } catch (err) {
+      console.error('Error querying for user:', err);
+      throw err;
+    }
+  }

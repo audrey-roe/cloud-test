@@ -1,7 +1,6 @@
 import express from "express";
 import connect from "./utils/connect";
 import logger from "./utils/logger";
-import deserializeUser from "./middleware/deserializeUser"
 import session from 'express-session';
 import connectRedis from 'connect-redis';
 import { createClient } from 'redis';
@@ -18,7 +17,7 @@ dotenv.config();
 const app = express()
 const port = config.port;
 app.use(express.json());
-app.use(deserializeUser);
+
 const redisClient = createClient({ legacyMode: true })
 const RedisStore = connectRedis(session);
 redisClient.connect().catch((err) => {

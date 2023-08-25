@@ -94,3 +94,6 @@ export const deleteUserByEmail = async (email: string, client: any): Promise<voi
         throw new Error('Failed to delete user');
     }
 };
+
+
+  

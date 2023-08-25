@@ -81,7 +81,6 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
         throw err;
     };
 };
-
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number): Promise<void> => {
     const client = await pool.connect();
     try {
@@ -157,7 +156,6 @@ export async function createFolder(userId: number, name: string, parentFolderId?
 
 export async function markAndDeleteUnsafeFile(fileId: number) {
     const client = await pool.connect();
-
     try {
         await client.query('BEGIN'); // Start a transaction
 
@@ -167,25 +165,38 @@ export async function markAndDeleteUnsafeFile(fileId: number) {
         if (fileResult.rows.length === 0) {
             throw new Error('File not found.');
         }
+
         const file = fileResult.rows[0];
 
-        if (file.fileType === 'image' || file.fileType === 'video') {
-            const updateQuery = 'UPDATE files SET is_unsafe = true WHERE id = $1';
-            const updateValues = [fileId];
-            await client.query(updateQuery, updateValues);
+        logger.info(file.media_type);
+        if (file.media_type.startsWith('image/') || file.media_type.startsWith('video/')) {
+            try {
+                const updateQuery = 'UPDATE files SET is_unsafe = true WHERE id = $1';
+                const updateValues = [fileId];
 
-            const deleteQuery = 'DELETE FROM files WHERE id = $1';
-            await client.query(deleteQuery, updateValues);
+                await client.query(updateQuery, updateValues);
 
-            await client.query('COMMIT');
+                const deleteHistoryQuery = 'DELETE FROM fileHistory WHERE fileid = $1';
+                await client.query(deleteHistoryQuery, [fileId]);
+                
+                const deleteFileQuery = 'DELETE FROM files WHERE id = $1';
+                await client.query(deleteFileQuery, [fileId]);
+                
+                logger.info('here is file');
+                await client.query('COMMIT');
+            } catch (error: any) {
+                console.error('Database error:', error.message);
+                console.error(error.stack);
+            }
         } else {
+
             throw new Error('File type is not supported for marking as unsafe and deleting.');
         }
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
-    }
-}
+    };
+};
 
 export const getFileHistory = async (fileId: number): Promise<QueryResult> => {
     const client = await pool.connect();
