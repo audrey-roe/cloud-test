@@ -1,11 +1,8 @@
 import { Pool, QueryResult } from 'pg';
-// import { S3 } from 'aws-sdk';
 import { PutObjectCommand, S3Client, S3, GetObjectCommand } from "@aws-sdk/client-s3";
-
 import fs from 'fs';
 import path from 'path';
 import logger from '../utils/logger';
-import { nanoid } from 'nanoid';
 import { Folder } from '../models/folder.models';
 
 const pool = new Pool({
@@ -16,16 +13,16 @@ const pool = new Pool({
     port: 5432,
 });
 
-const ACCESS_KEY_ID = "a729c9d7845af9d306a45e0d1cbd0aed";
-const SECRET_ACCESS_KEY = "04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
-const ACCOUNT_ID = "044c7053b2a25413acd0120a88ed749e";
+const s3_ACCESS_KEY_ID = "a729c9d7845af9d306a45e0d1cbd0aed";
+const s3_SECRET_ACCESS_KEY = "04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
+const s3_ACCOUNT_ID = "044c7053b2a25413acd0120a88ed749e";
 
 const s3 = new S3Client({
     region: "auto",
-    endpoint: `https://${ACCOUNT_ID}r2.cloudflarestorage.com/`,
+    endpoint: `https://${s3_ACCOUNT_ID}r2.cloudflarestorage.com/`,
     credentials: {
-        accessKeyId: ACCESS_KEY_ID,
-        secretAccessKey: SECRET_ACCESS_KEY,
+        accessKeyId: s3_ACCESS_KEY_ID,
+        secretAccessKey: s3_SECRET_ACCESS_KEY,
     },
 });
 

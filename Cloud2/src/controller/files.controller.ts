@@ -4,20 +4,21 @@ import { Pool } from 'pg';
 import logger from '../utils/logger';
 
 export const uploadFileHandler = async (req: Request, res: Response) => {
+  console.log(req);
   const { fileName, fileStream, mediaType } = req.body; 
   const user = res.locals.userId
   try {
-    const fileUrl =  fileStream//comment out whe s3 working
-    // const s3Response = await uploadToS3(fileStream, fileName);
-    // if (s3Response && s3Response.ETag) {
-    //   const fileUrl = s3Response.ETag;
+    // const fileUrl =  fileStream//comment out whe s3 working
+    const s3Response = await uploadToS3(fileStream, fileName);
+    if (s3Response && s3Response.ETag) {
+      const fileUrl = s3Response.ETag;
     logger.info(user)
       await uploadFileToDatabase(fileName, fileUrl, mediaType, user);
 
-    //   res.status(201).json({ message: 'File uploaded successfully' });
-    // } else {
-    //   throw new Error('Failed to upload file to S3');
-    // }
+      res.status(201).json({ message: 'File uploaded successfully' });
+    } else {
+      throw new Error('Failed to upload file to S3');
+    }
     res.status(201).json({ message: 'File uploaded successfully' });
   } catch (error: any) {
     if (error.message === 'Failed to upload file to S3') {

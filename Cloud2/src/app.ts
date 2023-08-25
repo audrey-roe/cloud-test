@@ -8,6 +8,11 @@ import { createClient } from 'redis';
 import routes from "./routes";
 import config from '../config/defaults';
 import dotenv from 'dotenv';
+import multer from 'multer';
+
+const storage = multer.memoryStorage(); 
+const upload = multer({ storage });
+
 dotenv.config();
 
 const app = express()

@@ -3,15 +3,17 @@ import { loginUserHandler, createUserHandler, deleteUserHandler } from './contro
 import { getFileHandler, streamFileHandler, uploadFileHandler, handleCreateFolder, markAndDeleteUnsafeFileController, getFileHistoryController} from "./controller/files.controller";
 import verifyAccessToken from "./middleware/requrieUser";
 import isAdmin from "./middleware/isAdmin";
+import multer from 'multer';
 
-function routes(app: Express){
+const storage = multer.memoryStorage();
+const upload = multer({ storage });function routes(app: Express){
     app.get("/healthcheck", (req:Request, res: Response)=> res.sendStatus(200));
     app.post('/api/login', loginUserHandler);
     app.post('/api/user', createUserHandler);
     app.delete('/api/user', deleteUserHandler);
-    app.post('/api/upload', verifyAccessToken, uploadFileHandler);
-    app.get('/file/:fileName', getFileHandler);
-    app.get('/stream/:fileName', streamFileHandler);
+    app.put('/api/file/upload', verifyAccessToken, uploadFileHandler);
+    app.get('/api/file/download/:fileName', getFileHandler);
+    app.get('/api/file/stream/:fileName', streamFileHandler);
     app.post('/api/create-folder', verifyAccessToken, handleCreateFolder);
     app.post('/api/file/mark-unsafe', verifyAccessToken, isAdmin, markAndDeleteUnsafeFileController )
     app.get('/api/file-history',verifyAccessToken, getFileHistoryController);

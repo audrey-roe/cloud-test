@@ -4,8 +4,7 @@ import { createUserHandler } from '../controller/user.controller';
 import * as userService from '../service/user.service'; 
 import { mockCreateUser } from '../service/__mocks__/user.service.mock'; 
 import express, {Response, Request, NextFunction } from 'express';
-
-
+import process from 'process';
 
 describe('User', () => {
   describe('UserService', () => {
