@@ -1,6 +1,6 @@
-import { uploadFileHandler, handleCreateFolder, getFileHandler } from "../controller/files.controller";
+import { uploadFileHandler, handleCreateFolder, getFileHandler, getFileHistoryController } from "../controller/files.controller";
 import { Response, Request } from 'express';
-import { uploadToS3, createFolder } from '../service/file.service';
+import { uploadToS3, createFolder, getFileHistory } from '../service/file.service';
 import { uploadFileToDatabase } from '../service/file.service';
 import { Readable } from "stream";
 import * as fileService from '../service/file.service';
@@ -20,7 +20,7 @@ describe('File', () => {
         });
 
         describe('uploadFileHandler', () => {
-            const mockRequest: Partial<Request> = {}; 
+            const mockRequest: Partial<Request> = {};
             const mockResponse: Partial<Response> = {
                 status: jest.fn(() => mockResponse) as unknown as jest.MockedFunction<Response['status']>,
                 json: jest.fn().mockReturnThis() as jest.MockedFunction<Response['json']>,
@@ -280,7 +280,7 @@ describe('File', () => {
                     json: jest.fn(),
                     send: jest.fn(),
                     setHeader: jest.fn(),
-                    locals: { user: { id: 234 } }  // Mocking the user ID here
+                    locals: { user: { id: 234 } }
 
                 };
             });
@@ -288,7 +288,7 @@ describe('File', () => {
             it('should successfully create a folder', async () => {
                 mockRequest.body = {
                     name: 'New Folder',
-                    parentFolderId: '1234',
+                    parentFolderId: 1234,
                 };
 
                 (fileService.createFolder as jest.MockedFunction<typeof createFolder>).mockResolvedValue({
@@ -315,17 +315,33 @@ describe('File', () => {
             });
 
             it('should handle missing name in request body', async () => {
-                // need to determine how function behaves with missing name and adjust this test accordingly
+                mockRequest.body = {
+                    parentFolderId: 1234,
+                };
+
+                await handleCreateFolder(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(400);
+                expect(mockResponse.json).toHaveBeenCalledWith(
+                    expect.objectContaining({ error: 'Bad Request' })
+                );
             });
 
             it('should handle missing parentFolderId in request body', async () => {
-                // Similar to above, adjust based on function behavior
+                mockRequest.body = {
+                    name: 'New Folder',
+                };
+
+                await handleCreateFolder(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(201);
             });
+
 
             it('should handle database errors', async () => {
                 mockRequest.body = {
                     name: 'New Folder',
-                    parentFolderId: '1234',
+                    parentFolderId: 1234,
                 };
 
                 (createFolder as jest.MockedFunction<typeof createFolder>).mockRejectedValue(new Error('Database error'));
@@ -336,7 +352,63 @@ describe('File', () => {
                 expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Internal server error' });
             });
 
+
         });
+
+
+        describe('getFileHistoryController', () => {
+
+            // Mock the service function to control its behavior
+            const mockGetFileHistory = getFileHistory as jest.MockedFunction<typeof getFileHistory>;
+            let mockRequest: Partial<Request> & { params: { fileId: string } };
+            let mockResponse: Partial<Response>;
+
+            beforeEach(() => {
+                mockRequest = {
+                    params: { fileId: '1' }  // Set an initial value here
+                };
+                mockResponse = {
+                    status: jest.fn().mockReturnThis(),
+                    json: jest.fn()
+                };
+            });
+
+
+
+            it('should return file history successfully', async () => {
+                mockRequest.params.fileId = '2'; 
+
+                const mockHistory: QueryResult = {
+                    rows: [
+                        { version: 1, change: 'create', actiondate: '2023-08-24 03:43:32.022321' },
+                    ],
+                    command: 'SELECT',
+                    rowCount: 15,
+                    oid: 0,
+                    fields: [], 
+                };
+
+                mockGetFileHistory.mockResolvedValue(mockHistory);
+
+                await getFileHistoryController(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(200);
+                expect(mockResponse.json).toHaveBeenCalledWith({ history: mockHistory.rows });
+            });
+
+            it('should handle errors while retrieving file history', async () => {
+                mockRequest.params.fileId = '1';
+
+                mockGetFileHistory.mockRejectedValue(new Error('Database error'));
+
+                await getFileHistoryController(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(500);
+                expect(mockResponse.json).toHaveBeenCalledWith({ error: 'An error occurred while retrieving file history.' });
+            });
+
+        });
+
 
     })
 })

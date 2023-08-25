@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, streamVideoOrAudio, createFolder, markAndDeleteUnsafeFile, getFileHistory, downloadFromS3 } from '../service/file.service';
 import { Pool } from 'pg';
 import logger from '../utils/logger';
+import { createFolderSchema } from '../schema/file.schema';
+import { z } from 'zod';
 
 export const uploadFileHandler = async (req: Request, res: Response) => {
   if (!req.file) {
@@ -77,16 +79,22 @@ export const streamFileHandler = async (req: Request, res: Response) => {
 
 export async function handleCreateFolder(req: Request, res: Response) {
   try {
-    const { name, parentFolderId } = req.body;
+    const parsedBody = createFolderSchema.parse(req.body);
+
+    const { name, parentFolderId } = parsedBody;
     const userId = res.locals.user.id;
     const newFolder = await createFolder(userId, name, parentFolderId);
 
     return res.status(201).json(newFolder);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Bad Request', details: error.errors });
+    }
     console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
 
 export async function markAndDeleteUnsafeFileController(req: Request, res: Response) {
   const fileId = parseInt(req.body.file.id);
