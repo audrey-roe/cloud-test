@@ -13,7 +13,6 @@ const pool = new Pool({
 });
 
 export const uploadFileHandler = async (req: Request, res: Response) => {
-  const client = await pool.connect();
 
   if (!req.file) {
     throw new Error('Upload file failed');
@@ -34,6 +33,7 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
     const s3Response = await uploadToS3(fileStream, filename, contentType);
     if (s3Response && s3Response.ETag) {
       const fileUrl = s3Response.ETag;
+      const client = await pool.connect();
       await uploadFileToDatabase(filename, fileUrl, mediaType, user, client);
 
       res.status(201).json({ message: 'File uploaded successfully' });
@@ -53,10 +53,10 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
 
 
 export const getFileHandler = async (req: Request, res: Response) => {
-  const client = await pool.connect();
 
   const fileId = req.params.fileId;
   try {
+      const client = await pool.connect();
       const result = await getFileFromDatabase(fileId, client);
 
       if (result.rows.length === 0) {
@@ -90,16 +90,12 @@ export const streamFileHandler = async (req: Request, res: Response) => {
 };
 
 export async function handleCreateFolder(req: Request, res: Response) {
-  const client = await pool.connect();
 
   try {
-
     const parsedBody = createFolderSchema.parse(req.body);
-    console.log('hehr')
     const { name, parentFolderId } = parsedBody;
     const userId = res.locals.userId;
-    console.log(userId)
-
+    const client = await pool.connect();
     const newFolder = await createFolder(userId, name, client, parentFolderId);
 
     return res.status(201).json(newFolder);
@@ -113,9 +109,9 @@ export async function handleCreateFolder(req: Request, res: Response) {
 
 export async function markAndDeleteUnsafeFileController(req: Request, res: Response) {
   const fileId = parseInt(req.body.file.id);
-  const client = await pool.connect();
 
   try {
+    const client = await pool.connect();
     await markAndDeleteUnsafeFile(fileId, client);
     res.status(200).json({ message: 'File marked as unsafe and deleted successfully.' });
   } catch (error: any) {
@@ -129,9 +125,9 @@ export async function markAndDeleteUnsafeFileController(req: Request, res: Respo
 
 export async function getFileHistoryController(req: Request, res: Response) {
   const fileId = parseInt(req.params.fileId);
-  const client = await pool.connect();
 
   try {
+    const client = await pool.connect();
     const history = await getFileHistory(fileId, client);
     res.status(200).json({ history: history.rows });
   } catch (error) {
