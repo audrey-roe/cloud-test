@@ -4,8 +4,17 @@ import { Pool } from 'pg';
 import logger from '../utils/logger';
 import { createFolderSchema } from '../schema/file.schema';
 import { z } from 'zod';
+const pool = new Pool({
+  user: "alex",
+  password: "alex",
+  database: "newdatabase",
+  host: "localhost",
+  port: 5432,
+});
 
 export const uploadFileHandler = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+
   if (!req.file) {
     throw new Error('Upload file failed');
   }
@@ -25,7 +34,7 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
     const s3Response = await uploadToS3(fileStream, filename, contentType);
     if (s3Response && s3Response.ETag) {
       const fileUrl = s3Response.ETag;
-      await uploadFileToDatabase(filename, fileUrl, mediaType, user);
+      await uploadFileToDatabase(filename, fileUrl, mediaType, user, client);
 
       res.status(201).json({ message: 'File uploaded successfully' });
     } else {
@@ -44,9 +53,11 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
 
 
 export const getFileHandler = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+
   const fileId = req.params.fileId;
   try {
-      const result = await getFileFromDatabase(fileId);
+      const result = await getFileFromDatabase(fileId, client);
 
       if (result.rows.length === 0) {
           return res.status(404).json({ message: 'File not found' });
@@ -67,9 +78,11 @@ export const getFileHandler = async (req: Request, res: Response) => {
 };
 
 export const streamFileHandler = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+
   const fileName = req.params.fileName;
   try {
-    await streamVideoOrAudio(res, fileName);
+    await streamVideoOrAudio(res, fileName, client);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Internal server error' });
@@ -77,12 +90,17 @@ export const streamFileHandler = async (req: Request, res: Response) => {
 };
 
 export async function handleCreateFolder(req: Request, res: Response) {
-  try {
-    const parsedBody = createFolderSchema.parse(req.body);
+  const client = await pool.connect();
 
+  try {
+
+    const parsedBody = createFolderSchema.parse(req.body);
+    console.log('hehr')
     const { name, parentFolderId } = parsedBody;
-    const userId = res.locals.user.id;
-    const newFolder = await createFolder(userId, name, parentFolderId);
+    const userId = res.locals.userId;
+    console.log(userId)
+
+    const newFolder = await createFolder(userId, name, client, parentFolderId);
 
     return res.status(201).json(newFolder);
   } catch (error) {
@@ -95,9 +113,10 @@ export async function handleCreateFolder(req: Request, res: Response) {
 
 export async function markAndDeleteUnsafeFileController(req: Request, res: Response) {
   const fileId = parseInt(req.body.file.id);
+  const client = await pool.connect();
 
   try {
-    await markAndDeleteUnsafeFile(fileId);
+    await markAndDeleteUnsafeFile(fileId, client);
     res.status(200).json({ message: 'File marked as unsafe and deleted successfully.' });
   } catch (error: any) {
     if (error.message === 'File not found.') {
@@ -110,9 +129,10 @@ export async function markAndDeleteUnsafeFileController(req: Request, res: Respo
 
 export async function getFileHistoryController(req: Request, res: Response) {
   const fileId = parseInt(req.params.fileId);
+  const client = await pool.connect();
 
   try {
-    const history = await getFileHistory(fileId);
+    const history = await getFileHistory(fileId, client);
     res.status(200).json({ history: history.rows });
   } catch (error) {
     res.status(500).json({ error: 'An error occurred while retrieving file history.' });

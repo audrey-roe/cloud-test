@@ -5,13 +5,7 @@ import path from 'path';
 import logger from '../utils/logger';
 import { Folder } from '../models/folder.models';
 
-const pool = new Pool({
-    user: "alex",
-    password: "alex",
-    database: "newdatabase",
-    host: "localhost",
-    port: 5432,
-});
+
 
 export const getS3Client = () => {
     return new S3Client({
@@ -70,7 +64,7 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
         const response = await s3.send(new GetObjectCommand(params));
         let fileBuffer: Buffer;
 
-        console.log('body')
+        console.log(response)
 
         const body = response.Body as unknown as AsyncIterable<Uint8Array>;
         console.log(body)
@@ -83,11 +77,10 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
         throw err;
     };
 };
-export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number): Promise<void> => {
-    const client = await pool.connect();
+export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<void> => {
     try {
         await client.query('BEGIN');
-
+            console.log('here?')
         const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4) RETURNING id';
         const insertValues = [fileName, mediaType, fileUrl, userId];
         const result = await client.query(insertQuery, insertValues);
@@ -105,8 +98,7 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
     }
 };
 
-export const getFileFromDatabase = async (fileId: string): Promise<QueryResult> => {
-    const client = await pool.connect();
+export const getFileFromDatabase = async (fileId: string, client: any): Promise<QueryResult> => {
     try {
         const query = 'SELECT * FROM files WHERE id = $1';
         const result = await client.query(query, [fileId]);
@@ -123,7 +115,7 @@ export const getFileFromDatabase = async (fileId: string): Promise<QueryResult> 
     }
 };
 
-export const streamVideoOrAudio = async (res: any, fileName: string): Promise<void> => {
+export const streamVideoOrAudio = async (res: any, fileName: string, client: any): Promise<void> => {
     const fileStream = await downloadFromS3(fileName);
     const extname = path.extname(fileName);
     const contentType = extname === '.mp4' ? 'video/mp4' : 'audio/mpeg';
@@ -137,8 +129,7 @@ export const streamVideoOrAudio = async (res: any, fileName: string): Promise<vo
     readStream.pipe(res);
 };
 
-export async function createFolder(userId: number, name: string, parentFolderId?: number): Promise<Folder> {
-
+export async function createFolder(userId: number, name: string, client: any, parentFolderId?: number): Promise<Folder> {
     const queryText = `
       INSERT INTO folders (name, owner_id, parent_folder_id)
       VALUES ($1, $2, $3)
@@ -147,17 +138,24 @@ export async function createFolder(userId: number, name: string, parentFolderId?
 
     const values = [name, userId, parentFolderId];
 
-    const client = await pool.connect();
+
     try {
+
         const result = await client.query(queryText, values);
+        console.log(values)
+
         return result.rows[0];
-    } finally {
+    } catch (error:any) {
+        console.error("Database Query Error:", error.message); // Log the error message
+        console.error(error.stack); // Log the stack trace for more detailed debugging
+        throw error;
+    }finally {
+
         client.release();
     }
 }
 
-export async function markAndDeleteUnsafeFile(fileId: number) {
-    const client = await pool.connect();
+export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
     try {
         await client.query('BEGIN'); // Start a transaction
 
@@ -200,8 +198,7 @@ export async function markAndDeleteUnsafeFile(fileId: number) {
     };
 };
 
-export const getFileHistory = async (fileId: number): Promise<QueryResult> => {
-    const client = await pool.connect();
+export const getFileHistory = async (fileId: number, client: any): Promise<QueryResult> => {
 
     try {
         const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
