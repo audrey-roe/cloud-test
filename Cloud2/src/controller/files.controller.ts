@@ -4,37 +4,45 @@ import { Pool } from 'pg';
 import logger from '../utils/logger';
 
 export const uploadFileHandler = async (req: Request, res: Response) => {
-  // console.log(req.file);
-  if(!req.file){
-    throw new Error ('Upload file failed')
+  if (!req.file) {
+    throw new Error('Upload file failed');
   }
+
+  const fileSizeLimit = 200 * 1024 * 1024; //200MB in bytes
+  if (req.file.size > fileSizeLimit) {
+    throw new Error('File size exceeds the 200MB limit');
+  }
+
   const filename = req.file.originalname;
   const fileStream = req.file.buffer; 
   const mediaType = req.file.mimetype;
   const contentType = req.file.mimetype;
   const user = res.locals.userId;
+
   try {
     const s3Response = await uploadToS3(fileStream, filename, contentType);
-    logger.info(s3Response)
+    logger.info(s3Response);
     if (s3Response && s3Response.ETag) {
       const fileUrl = s3Response.ETag;
-    logger.info(user)
+      logger.info(user);
       await uploadFileToDatabase(filename, fileUrl, mediaType, user);
 
       res.status(201).json({ message: 'File uploaded successfully' });
     } else {
       throw new Error('Failed to upload file to S3');
     }
-    res.status(201).json({ message: 'File uploaded successfully' });
   } catch (error: any) {
     if (error.message === 'Failed to upload file to S3') {
       res.status(404).json({ error: error.message });
+    } else if (error.message === 'File size exceeds the 200MB limit') {
+      res.status(400).json({ error: error.message });
     } else {
       console.error(error);
       res.status(500).json({ message: 'Internal server error' });
     }
   }
 };
+
 
 export const getFileHandler = async (req: Request, res: Response) => {
   const fileId = req.params.fileId;
@@ -58,8 +66,6 @@ export const getFileHandler = async (req: Request, res: Response) => {
     }
   }
 };
-
-
 
 export const streamFileHandler = async (req: Request, res: Response) => {
   const fileName = req.params.fileName;
@@ -99,7 +105,6 @@ export async function markAndDeleteUnsafeFileController(req: Request, res: Respo
     }
   }
 }
-
 
 export async function getFileHistoryController(req: Request, res: Response) {
   const fileId = parseInt(req.params.fileId);

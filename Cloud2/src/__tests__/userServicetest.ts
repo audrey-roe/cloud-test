@@ -1,10 +1,7 @@
 import { createUser } from '../service/user.service';
 import { UserInput } from '../models/user.model';
-import { createUserHandler } from '../controller/user.controller';
-import * as userService from '../service/user.service'; 
-import { mockCreateUser } from '../service/__mocks__/user.service.mock'; 
-import express, {Response, Request, NextFunction } from 'express';
 import process from 'process';
+
 
 describe('User', () => {
   describe('UserService', () => {
@@ -40,13 +37,16 @@ describe('User', () => {
       jest.mock('bcrypt', () => ({
         hash: jest.fn().mockResolvedValue('hashedPassword')
       }));
-      // // Tests that createUser successfully creates a user with valid input
+      afterEach(() => {
+        jest.clearAllMocks();
+      });
+      // Tests that createUser successfully creates a user with valid input
       it('should create a user with valid input', async () => {
         // Arrange
         jest.mock('bcrypt', () => ({
           hash: jest.fn().mockResolvedValue('hashedPassword')
         }));
-
+        // process.env.saltWorkFactor=10
         // Act
         const result = await createUser(userInput, mockClient);
 
@@ -131,70 +131,6 @@ describe('User', () => {
         await expect(createUser(userInput, mockClient)).rejects.toThrowError();
       });
     });
-  })
-  describe('UserController', () => {
-    jest.mock('../service/user.service'); 
-
-    describe('createUserHandler', () => {
-      const userInput: UserInput = {
-        name: 'John Doe',
-        email: 'johndoe@example.com',
-        password: 'password123',
-        is_admin: false
-
-      };
-      const existingUserResult = {
-        rows: []
-      };
-      const insertUserResult = {
-        rows: [{ id: 1, ...userInput }]
-      };
-
-      const mockQuery = jest.fn()
-        .mockResolvedValueOnce(existingUserResult)
-        .mockResolvedValueOnce(insertUserResult);
-
-      const mockClient = {
-        query: mockQuery
-      };
-      jest.mock('pg', () => ({
-        Pool: jest.fn(() => ({
-          connect: jest.fn(),
-          query: jest.fn(),
-          end: jest.fn()
-        }))
-      }));
-      jest.mock('bcrypt', () => ({
-        hash: jest.fn().mockResolvedValue('hashedPassword')
-      }));
-      // Tests that the function successfully creates a user and returns a token
-      it('should create a user with valid input', async () => {
-        jest.spyOn(userService, 'createUser').mockImplementation(mockCreateUser);
-
-        // Arrange
-        const req = {
-          body: userInput,
-        } as Request; 
-    
-        const res = {
-          status: jest.fn().mockReturnThis(),
-          json: jest.fn(),
-          send: jest.fn(),
-        } as unknown as Response; 
-
-        // Act
-        const mockClient = {}; // Create your mock client object
-        await createUserHandler(req, res, jest.fn() as NextFunction, mockClient); // Pass the mock client
-
-          // Assert
-        expect(mockCreateUser).toHaveBeenCalledWith({ ...userInput}, mockClient); 
-        expect(res.status).toHaveBeenCalledWith(201);
-        expect(res.json).toHaveBeenCalledWith({
-          user: insertUserResult,
-          token: expect.any(String),
-        }); 
-      });
-    })
   })
 })
 

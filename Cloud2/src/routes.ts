@@ -13,8 +13,8 @@ function routes(app: Express){
     app.post('/api/user', createUserHandler);
     app.delete('/api/user', deleteUserHandler);
     app.put('/api/file/upload', verifyAccessToken, upload.single('file'), uploadFileHandler);
-    app.get('/api/file/download/:fileId', getFileHandler); //done 
-    app.get('/api/file/stream/:fileName', streamFileHandler);
+    app.get('/api/file/download/:fileId', verifyAccessToken, getFileHandler); //done 
+    app.get('/api/file/stream/:fileName', verifyAccessToken, streamFileHandler);
     app.post('/api/create-folder', verifyAccessToken, handleCreateFolder);
     app.post('/api/file/mark-unsafe', verifyAccessToken, isAdmin, markAndDeleteUnsafeFileController )
     app.get('/api/file-history',verifyAccessToken, getFileHistoryController);

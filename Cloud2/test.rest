@@ -1,7 +1,92 @@
-GET http://localhost.1337/
+### Health Check
+GET http://localhost:1337/healthcheck
+
+###
+
+### Login
+POST http://localhost:1337/api/login
 Content-Type: application/json
+
 {
-    "file":{
-        "id": 3
-    }
+    "email": "test@example.com",
+    "password": "Password456!"
 }
+
+###
+
+### Create User
+POST http://localhost:1337/api/user
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "Password456!",
+    "name": "Sample User",
+    "is_admin": false
+}
+
+###
+
+### Delete User
+DELETE http://localhost:1337/api/user
+Content-Type: application/json
+
+{
+    "email": "test@example.com",
+    "password": "Password456!"
+}
+
+###
+
+### Upload File (modify content type and body if needed)
+PUT http://localhost:1337/api/file/upload
+Content-Type: multipart/form-data; boundary=---BOUNDARY
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
+
+---BOUNDARY
+Content-Disposition: form-data; name="file"; filename="sample.txt"
+Content-Type: text/plain
+
+Sample File Content
+---BOUNDARY--
+
+###
+
+### Download File
+GET http://localhost:1337/api/file/download/8
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
+
+###
+
+### Stream File
+GET http://localhost:1337/api/file/stream/SAMPLE_FILE_NAME
+
+###
+
+### Create Folder
+POST http://localhost:1337/api/create-folder
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
+
+{
+    "folderName": "sampleFolder"
+}
+
+###
+
+### Mark and Delete Unsafe File
+POST http://localhost:1337/api/file/mark-unsafe
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
+
+{
+    "fileId": "SAMPLE_FILE_ID"
+}
+
+###
+
+### Get File History
+GET http://localhost:1337/api/file-history
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
+
+###

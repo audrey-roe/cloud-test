@@ -4,6 +4,8 @@ import logger from '../utils/logger';
 import { User, UserInput} from '../models/user.model';
 import jwt from 'jsonwebtoken';
 import { Pool } from 'pg';
+import { generateToken } from '../middleware/tokenService';
+import { CreateUserInput } from '../schema/user.schema';
 
 const client = new Pool({
     user: "alex",
@@ -13,7 +15,7 @@ const client = new Pool({
     port: 5432,
 });
 
-export const createUserHandler = async (req: Request, res: Response, next: NextFunction) => {
+export const createUserHandler = async (req:Request<{},{}, CreateUserInput['body']>, res: Response, next: NextFunction) => {
     const userInput: UserInput = req.body;
 
     try {
@@ -22,9 +24,10 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
         if (!process.env.jwtSecret) {
             return res.status(500).send('JWT secret is not configured.');
         }
-        const token = jwt.sign({ userId: user.id }, process.env.jwtSecret, { expiresIn: '1h' });
-
-        return res.status(201).json({ user: user, token })
+        if (typeof user.id !== 'undefined') {
+            const token = generateToken(user.id);
+            return res.status(201).json({ user: user, token })
+        } 
 
     } catch (error:any) {
         return res.status(409).send(error.message);
@@ -51,7 +54,6 @@ export const loginUserHandler = async (req: Request, res: Response, next: NextFu
         return res.status(500).send('Login failed');
     }
 };
-
 
 export const deleteUserHandler = async (req: Request, res: Response, next: NextFunction) => {
     const uemail: string = req.body.email;
