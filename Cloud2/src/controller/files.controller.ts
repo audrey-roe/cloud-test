@@ -48,8 +48,10 @@ export const getFileHandler = async (req: Request, res: Response) => {
   const fileId = req.params.fileId;
   try {
       const result = await getFileFromDatabase(fileId);
+      console.log('outside 404 condition');
 
       if (result.rows.length === 0) {
+          console.log('Inside 404 condition');
           return res.status(404).json({ message: 'File not found' });
       }
 

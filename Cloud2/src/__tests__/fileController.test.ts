@@ -1,12 +1,14 @@
-import { uploadFileHandler } from "../controller/files.controller";
+import { uploadFileHandler, getFileHandler } from "../controller/files.controller";
 import { Response, Request } from 'express';
 import { uploadToS3 } from '../service/file.service';
 import { uploadFileToDatabase } from '../service/file.service';
 import { Readable } from "stream";
 import * as fileService from '../service/file.service';
+import { QueryResult } from "pg";
 
 jest.mock('../service/file.service');
-jest.mock('./../service/file.service');
+
+
 describe('File', () => {
 
     describe('FileController', () => {
@@ -97,11 +99,11 @@ describe('File', () => {
                     filename: 'mockFilename.jpg',
                     path: '/mock/path/to/destination/mockFilename.jpg'
                 };
-            
+
                 await expect(uploadFileHandler(mockRequest as Request, mockResponse as Response))
-                      .rejects.toThrow('File size exceeds the 200MB limit');
+                    .rejects.toThrow('File size exceeds the 200MB limit');
             });
-            
+
 
             it('should throw an error if no file is provided', async () => {
                 mockRequest.file = undefined;
@@ -176,7 +178,95 @@ describe('File', () => {
                 expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Internal server error' });
             });
         });
-        
+
+        describe('getFileHandler', () => {
+            let mockRequest: Partial<Request>;
+            let mockResponse: Partial<Response>;
+            const mockNext = jest.fn();
+
+            beforeEach(() => {
+                mockRequest = {};
+                mockResponse = {
+                    status: jest.fn().mockReturnThis(),
+                    json: jest.fn(),
+                    send: jest.fn(),
+                    setHeader: jest.fn()
+                };
+            });
+
+            it('should successfully retrieve a file', async () => {
+                mockRequest.params = { fileId: '1234' };
+
+                (fileService.getFileFromDatabase as jest.MockedFunction<typeof fileService.getFileFromDatabase>).mockResolvedValue({
+                    command: 'SELECT',
+                    rowCount: 1,
+                    oid: null,
+                    rows: [{
+                        file_name: 'test.txt',
+                        media_type: 'text/plain',
+                    }],
+                    fields: [],
+                } as unknown as QueryResult);
+
+                (fileService.downloadFromS3 as jest.MockedFunction<typeof fileService.downloadFromS3>).mockResolvedValue(Buffer.from('Hello World'));
+
+                await getFileHandler(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=test.txt');
+                expect(mockResponse.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain');
+                expect(mockResponse.send).toHaveBeenCalledWith(Buffer.from('Hello World'));
+            });
+
+            it('should return a 404 when file not found in database', async () => {
+                mockRequest.params = { fileId: '1234' };
+                (fileService.getFileFromDatabase as jest.MockedFunction<typeof fileService.getFileFromDatabase>).mockResolvedValue({
+                    command: 'SELECT',
+                    rowCount: 0,
+                    oid: null,
+                    rows: [],
+                    fields: [],
+                } as unknown as QueryResult);
+                
+
+                await getFileHandler(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(404);
+                expect(mockResponse.json).toHaveBeenCalledWith({ message: 'File not found' });
+            });
+
+            it('should return a 404 when specified key does not exist in S3', async () => {
+                mockRequest.params = { fileId: '1234' };
+                (fileService.getFileFromDatabase as jest.MockedFunction<typeof fileService.getFileFromDatabase>).mockResolvedValue({
+                    command: 'SELECT',
+                    rowCount: 1,
+                    oid: null,
+                    rows: [{
+                        file_name: 'test.txt',
+                        media_type: 'text/plain',
+                    }],
+                    fields: [],
+                } as unknown as QueryResult);
+
+
+                (fileService.downloadFromS3 as jest.MockedFunction<typeof fileService.downloadFromS3>).mockRejectedValue(new Error('The specified key does not exist.'));
+
+                await getFileHandler(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(404);
+                expect(mockResponse.json).toHaveBeenCalledWith({ error: `The file you are looking for doesn't exist` });
+            });
+
+            it('should handle unexpected errors', async () => {
+                mockRequest.params = { fileId: '1234' };
+                (fileService.getFileFromDatabase as jest.MockedFunction<typeof fileService.getFileFromDatabase>).mockRejectedValue(new Error('Unexpected error'));
+
+                await getFileHandler(mockRequest as Request, mockResponse as Response);
+
+                expect(mockResponse.status).toHaveBeenCalledWith(500);
+                expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Internal server error', error: 'Unexpected error' });
+            });
+        });
+
 
     })
 })
