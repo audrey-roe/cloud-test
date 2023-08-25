@@ -1,4 +1,4 @@
-import { object, string, TypeOf } from "zod";
+import { boolean, object, string } from "zod";
 
 export const createUserSchema = object({
     body: object({
@@ -19,19 +19,8 @@ export const createUserSchema = object({
         email: string({
             required_error: "Email is required",
         }).email("Not a valid email"),
+        
+        is_admin: boolean().default(false), 
 
-        passwordConfirmation: string({
-            required_error: "Password confirmation is required",
-        }),
-
-    }).refine((data: any) => data.password === data.passwordConfirmation, {
-        message: "Passwords do not match",
-        path: ["passwordConfirmation"],
-    }),
+    })
 });
-
-
-export type CreateUserInput = Omit<
-    TypeOf<typeof createUserSchema>,
-    "body.passwordConfirmation"
->;

@@ -40,7 +40,7 @@ describe('User', () => {
       afterEach(() => {
         jest.clearAllMocks();
       });
-      // Tests that createUser successfully creates a user with valid input
+
       it('should create a user with valid input', async () => {
         // Arrange
         jest.mock('bcrypt', () => ({
@@ -70,7 +70,7 @@ describe('User', () => {
 
         expect(result).toEqual({ id: 1, ...userInput });
       });
-      // Tests that createUser successfully creates a user with valid input and isAdmin=true
+
       it('should create a user with valid input and isAdmin=true', async () => {
         // Arrange
         const userInput: UserInput = {
@@ -123,13 +123,14 @@ describe('User', () => {
         expect(sanitizeString(actualInsertQueryPart)).toEqual(sanitizeString(expectedInsertQueryPart));
         expect(result).toEqual({ id: 1, ...userInput, is_admin: true });
       });
-      // Tests that createUser throws a conflict Error when email already exists
+
       it('should throw a conflict Error when email already exists', async () => {
         // Arrange
         //...
         // Act and Assert
         await expect(createUser(userInput, mockClient)).rejects.toThrowError();
       });
+      
     });
   })
 })

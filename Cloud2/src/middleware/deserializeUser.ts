@@ -15,7 +15,6 @@ const deserializeUser = async (req:Request, res:Response, next:NextFunction) =>{
         return next();
     }
     if(expired && refreshToken){
-        console.log('we here')
         
 
     }

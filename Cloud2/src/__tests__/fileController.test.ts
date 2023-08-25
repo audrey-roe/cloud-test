@@ -18,6 +18,10 @@ describe('File', () => {
             (uploadToS3 as jest.Mock).mockResolvedValue({ ETag: 'mockETagValue' });
             (uploadFileToDatabase as jest.Mock).mockResolvedValue({});
         });
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+    
 
         describe('uploadFileHandler', () => {
             const mockRequest: Partial<Request> = {};

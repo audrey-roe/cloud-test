@@ -117,6 +117,48 @@ describe('User', () => {
                 expect(mockResponse.send).toHaveBeenCalledWith('Failed to create user');
             });
 
+            it('should not accept invalid full name', async () => {
+                // Use a single-word name to trigger validation error
+                mockRequest.body = {
+                    name: 'Onlyname',
+                    email: 'test@example.com',
+                    password: 'password123',
+                };
+        
+                await createUserHandler(mockRequest as Request, mockResponse as unknown as Response, jest.fn() as NextFunction);
+        
+                expect(mockResponse.status).toHaveBeenCalledWith(400);
+                expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
+                    error: 'Validation failed',
+                    details: expect.arrayContaining([
+                        expect.objectContaining({
+                            message: "Full name should have at least first name and last name"
+                        })
+                    ]),
+                }));
+            });
+
+            it('should not accept invalid email', async () => {
+                // Use an invalid email to trigger validation error
+                mockRequest.body = {
+                    name: 'John Doe',
+                    email: 'invalidEmail',
+                    password: 'password123',
+                };
+            
+                await createUserHandler(mockRequest as Request, mockResponse as unknown as Response, jest.fn() as NextFunction);
+            
+                expect(mockResponse.status).toHaveBeenCalledWith(400);
+                expect(mockResponse.json).toHaveBeenCalledWith(expect.objectContaining({
+                    error: 'Validation failed',
+                    details: expect.arrayContaining([
+                        expect.objectContaining({
+                            message: "Not a valid email"
+                        })
+                    ]),
+                }));
+            });
+            
             
         })
     })
