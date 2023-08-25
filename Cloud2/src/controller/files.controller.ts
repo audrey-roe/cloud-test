@@ -37,7 +37,6 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
     } else if (error.message === 'File size exceeds the 200MB limit') {
       res.status(400).json({ error: error.message });
     } else {
-      console.error(error);
       res.status(500).json({ message: 'Internal server error' });
     }
   }
@@ -90,11 +89,9 @@ export async function handleCreateFolder(req: Request, res: Response) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Bad Request', details: error.errors });
     }
-    console.error(error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
-
 
 export async function markAndDeleteUnsafeFileController(req: Request, res: Response) {
   const fileId = parseInt(req.body.file.id);

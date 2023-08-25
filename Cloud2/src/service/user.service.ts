@@ -36,10 +36,10 @@ export const createUser = async (userInput: UserInput, client: any): Promise<Use
         return insertUserResult.rows[0];
     } catch (error: any) {
         if (error.statusCode === 409) {
-            logger.error('User conflict error:', error);
+            // logger.error('User conflict error:', error);
             throw error;
         } else {
-            logger.error('Error creating user:', error);
+            // logger.error('Error creating user:', error);
             throw new Error('Failed to create user');
         }
     }
