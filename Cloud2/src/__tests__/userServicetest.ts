@@ -107,13 +107,11 @@ describe('User', () => {
 
         // Assert
         expect(mockClient.query).toHaveBeenCalledTimes(2);
-        // Expect the SELECT query
         expect(mockClient.query).toHaveBeenNthCalledWith(1, {
           text: 'SELECT * FROM users WHERE email = $1',
           values: ['johndoe@example.com']
         });
 
-        // Expect the INSERT query
         const expectedInsertQueryPart = `
             INSERT INTO users (name, email, password, is_admin)
             VALUES ($1, $2, $3, $4)

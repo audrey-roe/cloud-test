@@ -20,7 +20,6 @@ export const createUserHandler = async (req: Request, res: Response, next: NextF
         console.log(req.body)
 
         const validInput = createUserSchema.parse(req);
-        console.log(validInput)
         const is_admin = validInput.body.is_admin || false;
         const user = await createUser({ ...validInput.body, is_admin: is_admin }, client);
 

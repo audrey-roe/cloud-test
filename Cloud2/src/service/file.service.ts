@@ -13,7 +13,7 @@ const pool = new Pool({
     port: 5432,
 });
 
-const getS3Client = () => {
+export const getS3Client = () => {
     return new S3Client({
         region: "auto",
         endpoint: `https://${process.env.s3_ACCOUNT_ID!}.r2.cloudflarestorage.com/`,
@@ -70,8 +70,10 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
         const response = await s3.send(new GetObjectCommand(params));
         let fileBuffer: Buffer;
 
+        console.log('body')
 
         const body = response.Body as unknown as AsyncIterable<Uint8Array>;
+        console.log(body)
         if (body) {
             const fileBuffer = await asyncIteratorToBuffer(body);
             return fileBuffer;
