@@ -13,26 +13,43 @@ const pool = new Pool({
     port: 5432,
 });
 
-const s3_ACCESS_KEY_ID = "a729c9d7845af9d306a45e0d1cbd0aed";
-const s3_SECRET_ACCESS_KEY = "04a51678e0a433647a8ff10337ddf5f036edda2093a229f17b666efa2f58f819";
-const s3_ACCOUNT_ID = "044c7053b2a25413acd0120a88ed749e";
+// const s3 = new S3Client({
+//     region: "auto",
+//     endpoint: `https://${process.env.s3_ACCOUNT_ID!}r2.cloudflarestorage.com/`,
+//     credentials: {
+//         accessKeyId: process.env.s3_ACCESS_KEY_ID!,
+//         secretAccessKey: process.env.s3_SECRET_ACCESS_KEY!,
+//     },
+// });
 
-const s3 = new S3Client({
-    region: "auto",
-    endpoint: `https://${s3_ACCOUNT_ID}r2.cloudflarestorage.com/`,
-    credentials: {
-        accessKeyId: s3_ACCESS_KEY_ID,
-        secretAccessKey: s3_SECRET_ACCESS_KEY,
-    },
-});
+const getS3Client = () => {
+    return new S3Client({
+        region: "auto",
+        endpoint: `https://${process.env.s3_ACCOUNT_ID!}.r2.cloudflarestorage.com/`,
+        credentials: {
+            accessKeyId: process.env.s3_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.s3_SECRET_ACCESS_KEY!,
+        },
+    });
+};
+export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string) => {
+    const s3 = getS3Client();
 
-export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) => {
+    logger.info("outside");
+
+    if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
+        logger.error("AWS credentials are not set!");
+        throw new Error("AWS credentials are missing");
+    }
     try {
+        logger.info("here");
         const params = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: fileName,
             Body: fileStream,
+            ContentType: contentType,
         };
+        logger.info('here')
         const response = await s3.send(new PutObjectCommand(params));
         logger.info(
             "Successfully uploaded object: " +
@@ -41,8 +58,9 @@ export const uploadToS3 = async (fileStream: fs.ReadStream, fileName: string) =>
             params.Key
         );
         return response;
-    } catch (err) {
-        logger.info("Error", err);
+    } catch (err:any) {
+        logger.error("Error uploading to S3:", err.message, "\nStack trace:", err.stack);
+        throw err;  // Rethrow the error so it can be caught and handled further up the chain
     }
 };
 
@@ -55,7 +73,7 @@ export const downloadFromS3 = async (fileName: string): Promise<Buffer> => {
     return response.Body as unknown as Buffer;
 };
 
-export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId:number): Promise<void> => {
+export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number): Promise<void> => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -165,10 +183,10 @@ export const getFileHistory = async (fileId: number): Promise<QueryResult> => {
     const client = await pool.connect();
 
     try {
-      const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
-      const result = await client.query(query, [fileId]);
-      return result;
+        const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
+        const result = await client.query(query, [fileId]);
+        return result;
     } catch (error) {
-      throw error;
-    } 
+        throw error;
+    }
 };

@@ -6,12 +6,13 @@ import isAdmin from "./middleware/isAdmin";
 import multer from 'multer';
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage });function routes(app: Express){
+const upload = multer({ storage });
+function routes(app: Express){
     app.get("/healthcheck", (req:Request, res: Response)=> res.sendStatus(200));
     app.post('/api/login', loginUserHandler);
     app.post('/api/user', createUserHandler);
     app.delete('/api/user', deleteUserHandler);
-    app.put('/api/file/upload', verifyAccessToken, uploadFileHandler);
+    app.put('/api/file/upload', verifyAccessToken, upload.single('file'), uploadFileHandler);
     app.get('/api/file/download/:fileName', getFileHandler);
     app.get('/api/file/stream/:fileName', streamFileHandler);
     app.post('/api/create-folder', verifyAccessToken, handleCreateFolder);
