@@ -28,7 +28,8 @@ export const verifyAccessToken = async (req: Request, res: Response, next: NextF
                 values: value
             });
             const sessionIdInDB = result.rows[0]?.session_id;
-
+            console.log(sessionIdInDB)
+            console.log(req.session.id)
             if (sessionIdInDB !== req.session.userId) {
                 return res.status(401).send('Session has been revoked');
             }

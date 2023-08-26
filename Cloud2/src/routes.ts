@@ -9,10 +9,10 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage });
 function routes(app: Express){
     app.get("/healthcheck", (req:Request, res: Response)=> res.sendStatus(200));
-    app.post('/api/login', loginUserHandler);
-    app.post('/api/user', createUserHandler);
+    app.post('/api/login', createOrUpdateSession, loginUserHandler);
+    app.post('/api/user', createOrUpdateSession, createUserHandler);
     app.delete('/api/user', deleteUserHandler);
-    app.post('/revokeSession', revokeSession);
+    app.post('/api/revokeSession', revokeSession);
     app.put('/api/file/upload', verifyAccessToken, upload.single('file'), uploadFileHandler);
     app.get('/api/file/download/:fileId', verifyAccessToken, getFileHandler); //done 
     app.get('/api/file/stream/:fileName', verifyAccessToken, streamFileHandler);

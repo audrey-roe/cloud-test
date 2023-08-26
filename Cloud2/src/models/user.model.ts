@@ -1,9 +1,6 @@
 import bcrypt from 'bcrypt';
 import { FileInput } from './file.model';
 import { Folder, FolderInput } from './folder.models';
-import { customAlphabet } from "nanoid";
-
-const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 10);
 
 export class User {
   id: number | undefined;
@@ -45,4 +42,3 @@ export interface UserInput {
 export class Admin extends User {
   // filesPendingDeletion: File[] = [];
 }
-

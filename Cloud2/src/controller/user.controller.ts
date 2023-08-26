@@ -91,19 +91,21 @@ export async function getUserFromDatabase(userId: number): Promise<any | null> {
 
 export async function revokeSession(req: Request, res: Response, next: NextFunction) {
     const userId = req.session.userId;
-    const pgPool = await pool.connect();
 
     const query = 'SELECT session_id FROM users WHERE id = $1'
     const value =  [userId];
-    const result: QueryResult = await pgPool.query({
-        text: query,
-        values: value
-    });
-    const sessionId = result.rows[0].session_id;
-
-    await pgPool.query('UPDATE users SET session_id = NULL WHERE id = $1', [userId]);
-
-    redisClient.del(`sess:${sessionId}`);
-
-    res.send('Session revoked');
+    try {
+        const result: QueryResult = await pool.query({
+            text: query,
+            values: value
+        });
+        if (result.rows.length === 0) {
+            return res.status(404).send('User not found or session already revoked.');
+        }
+        const sessionId = result.rows[0].session_id;
+    } catch (error) {
+        console.error('Database query error:', error);
+        return res.status(500).send('Internal server error');
+    }
+    
 }
