@@ -40,7 +40,7 @@ export const createUser = async (userInput: UserInput, client: any, session_id: 
     }
 };
 
-export const login = async (email: string, password: string, client: any, session_id: any): Promise<User | string> => {
+export const login = async (email: string, password: string, client: any, session_id: string): Promise<User | string> => {
 
     try {
         const findUserQuery = 'SELECT * FROM users WHERE email = $1';

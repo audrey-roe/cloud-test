@@ -26,19 +26,35 @@ redisClient.connect().catch((err) => {
 // app.use(setupRedisMiddleware);
 const sessionSecret = process.env.sessionSecret !== undefined ? process.env.sessionSecret : 'D9lTgknR8YBPzwTqZRred9tEu4uI3xus';
 
+
 app.use(session({
   store: new RedisStore({
     client: redisClient
   }),
   secret: sessionSecret,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
   cookie: {
     secure: false,//if true only transmit over https TODO change to true for porduction
     httpOnly: false,
     maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
+// Sample route to test
+app.get('/test', (req, res) => {
+  if(!req.session.views) {
+    req.session.views = 1;
+  } else {
+    req.session.views++;
+  }
+  res.send(`You have visited this page ${req.session.views} times`);
+});
+
+app.use((req, res, next) => {
+  console.log(req.sessionID);
+  next();
+});
+
 
 
 app.listen(port, async () => {

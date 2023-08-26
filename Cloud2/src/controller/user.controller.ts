@@ -92,20 +92,29 @@ export async function getUserFromDatabase(userId: number): Promise<any | null> {
 export async function revokeSession(req: Request, res: Response, next: NextFunction) {
     const userId = req.session.userId;
 
-    const query = 'SELECT session_id FROM users WHERE id = $1'
-    const value =  [userId];
+    if (!userId) {
+        return res.status(400).send('User not logged in.');
+    }
+
+    const query = 'SELECT session_id FROM users WHERE id = $1';
+    const value = [userId];
+    
     try {
         const result: QueryResult = await pool.query({
             text: query,
             values: value
         });
+        
         if (result.rows.length === 0) {
             return res.status(404).send('User not found or session already revoked.');
         }
-        const sessionId = result.rows[0].session_id;
+        const sessionQuery = 'UPDATE users SET session_id = NULL WHERE id = $1';
+        const sessionValue = [userId]
+        await pool.query(sessionQuery, sessionValue);
+        
+        return res.status(200).send('Session revoked successfully.');
     } catch (error) {
         console.error('Database query error:', error);
         return res.status(500).send('Internal server error');
     }
-    
 }

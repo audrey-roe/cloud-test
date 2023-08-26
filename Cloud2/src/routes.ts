@@ -18,6 +18,6 @@ function routes(app: Express){
     app.get('/api/file/stream/:fileName', verifyAccessToken, streamFileHandler);
     app.post('/api/create-folder', verifyAccessToken, handleCreateFolder);
     app.post('/api/file/mark-unsafe', verifyAccessToken, isAdmin, markAndDeleteUnsafeFileController )
-    app.get('/api/file-history',verifyAccessToken, getFileHistoryController);
+    app.get('/api/file-history/:fileId',verifyAccessToken, getFileHistoryController);
 }
 export default routes

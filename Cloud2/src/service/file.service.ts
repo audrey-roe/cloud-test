@@ -169,10 +169,15 @@ export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
 
 export const getFileHistory = async (fileId: number, client: any): Promise<QueryResult> => {
     try {
+        console.log(fileId)
+
         const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
         const result = await client.query(query, [fileId]);
         return result;
-    } catch (error) {
+    } catch (error:any) {
+        console.error("Database error:", error); 
+        console.error(error.stack); 
+
         throw error;
     }
 };

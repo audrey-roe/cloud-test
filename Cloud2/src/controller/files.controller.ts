@@ -73,6 +73,7 @@ export const getFileHandler = async (req: Request, res: Response) => {
       const fileName = result.rows[0].file_name;
       const s3 = getS3Client();
       const fileBuffer = await downloadFromS3(fileName, s3);
+      
       res.setHeader('Content-Disposition', 'attachment; filename=' + fileName);
       res.setHeader('Content-Type', result.rows[0].media_type); 
       res.send(fileBuffer);
