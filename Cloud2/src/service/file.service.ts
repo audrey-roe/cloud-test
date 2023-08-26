@@ -65,8 +65,12 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<void> => {
     try {
         await client.query('BEGIN');
-        const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4) RETURNING id';
-        const insertValues = [fileName, mediaType, fileUrl, userId];
+
+        const DEFAULT_PARENT_FOLDER_ID = 1;
+
+        const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id';
+
+        const insertValues = [fileName, mediaType, fileUrl, userId, DEFAULT_PARENT_FOLDER_ID];
         const result = await client.query(insertQuery, insertValues);
 
         const fileId = result.rows[0].id;
@@ -81,6 +85,7 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
         throw error;
     }
 };
+
 
 export const getFileFromDatabase = async (fileId: string, client: any): Promise<QueryResult> => {
     try {
@@ -100,6 +105,7 @@ export const getFileFromDatabase = async (fileId: string, client: any): Promise<
 };
 
 export async function createFolder(userId: number, name: string, client: any,  parentFolderId?: number | null): Promise<Folder> {
+
     const queryText = `INSERT INTO folders (name, owner_id, parent_folder_id)
                 VALUES ($1, $2, $3)
                 RETURNING *
@@ -112,7 +118,7 @@ export async function createFolder(userId: number, name: string, client: any,  p
         return result.rows[0];
     } catch (error:any) {
         console.error("Database Query Error:", error.message); 
-        console.error(error.stack); 
+        // console.error(error.stack); 
         throw error;
     }
 }

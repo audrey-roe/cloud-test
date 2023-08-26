@@ -4,6 +4,7 @@ CREATE TABLE users(
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL
 );
+
 CREATE TABLE files (
   id SERIAL PRIMARY KEY,
   file_name TEXT,
@@ -13,17 +14,22 @@ CREATE TABLE files (
   data TEXT,
   is_unsafe BOOLEAN DEFAULT false,
   is_pending_deletion BOOLEAN DEFAULT false,
-  ownerid INTEGER
+  ownerid INTEGER,
+  folder_id INTEGER
 );
+
 CREATE TABLE fileHistory (
   id SERIAL PRIMARY KEY,
   fileid INTEGER REFERENCES files(id), 
   action TEXT,
-  actiondate DATE DEFAULT CURRENT_DATE,
+  actiondate DATE DEFAULT CURRENT_DATE
 );
+
 CREATE TABLE folders (
   id SERIAL PRIMARY KEY,
   name TEXT,
   owner_id INTEGER,
   parent_folder_id INTEGER
 );
+
+INSERT INTO folders (name, owner_id, parent_folder_id) VALUES ('User folder', 1, NULL);

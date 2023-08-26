@@ -126,13 +126,15 @@ describe("File", () => {
           .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
         await uploadFileToDatabase('filename.txt', 'fileUrl', 'mediaType', 1, mockClient);
-        expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-        expect(mockClient.query).toHaveBeenCalledWith(
-          'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4) RETURNING id',
-          ['filename.txt', 'mediaType', 'fileUrl', 1]
+
+        expect(mockClient.query).nthCalledWith(1, 'BEGIN');
+        expect(mockClient.query).nthCalledWith(2, 
+          'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id',
+          ['filename.txt', 'mediaType', 'fileUrl', 1, 1]
         );
-        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [1, 'create']);
-        expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+        expect(mockClient.query).nthCalledWith(3, 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [1, 'create']);
+        expect(mockClient.query).nthCalledWith(4, 'COMMIT');
+
       });
 
       it('should roll back transaction if error during files table insertion', async () => {
@@ -191,7 +193,7 @@ describe("File", () => {
       // Mock the 'pg' module to prevent interactions with a real database.
       const userId = 1;
       const name = 'Test Folder';
-      const parentFolderId = null;
+      const parentFolderId = 1;
       const mockQueryResults = {
         rows: [{ id: 1, name: 'Test Folder', owner_id: userId, parent_folder_id: parentFolderId }]
       };
@@ -224,7 +226,7 @@ describe("File", () => {
 
         // Assert
         expect(mockQuery).toHaveBeenCalledWith(expectedQueryText, [name, userId, parentFolderId]);
-        expect(result).toEqual({ id: 1, name: 'Test Folder', owner_id: 1, parent_folder_id: null });
+        expect(result).toEqual({ id: 1, name: 'Test Folder', owner_id: 1, parent_folder_id: 1 });
       });
 
 

@@ -112,13 +112,20 @@ export const streamVideoOrAudio = async (res: any, fileName: string, client: any
   const readStream = fs.createReadStream(fileStream);
   readStream.pipe(res);
 };
+
 export async function handleCreateFolder(req: Request, res: Response) {
 
   try {
     const parsedBody = createFolderSchema.parse(req.body);
-    const { name, parentFolderId } = parsedBody;
+    let { name, parentFolderId } = parsedBody;
     const userId = res.locals.userId;
     const client = await pool.connect();
+
+    // if parentFolderId is null, setting it to 1 (base folder id, which set to be created from the init sql in the migration folder.) 
+    if (!parentFolderId) {
+      parentFolderId = 1;
+    }
+
     const newFolder = await createFolder(userId, name, client, parentFolderId);
 
     return res.status(201).json(newFolder);
