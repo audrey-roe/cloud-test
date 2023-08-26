@@ -101,31 +101,28 @@ export const getFileFromDatabase = async (fileId: string, client: any): Promise<
     }
 };
 
-
-
-export async function createFolder(userId: number, name: string, client: any, parentFolderId?: number): Promise<Folder> {
-    const queryText = `
-      INSERT INTO folders (name, owner_id, parent_folder_id)
-      VALUES ($1, $2, $3)
-      RETURNING *
+export async function createFolder(userId: number, name: string, client: any,  parentFolderId?: number | null): Promise<Folder> {
+    const queryText = `INSERT INTO folders (name, owner_id, parent_folder_id)
+                VALUES ($1, $2, $3)
+                RETURNING *
     `;
     const values = [name, userId, parentFolderId];
 
     try {
         const result = await client.query(queryText, values);
-        console.log(values)
 
         return result.rows[0];
     } catch (error:any) {
-        console.error("Database Query Error:", error.message); // Log the error message
-        console.error(error.stack); // Log the stack trace for more detailed debugging
+        console.error("Database Query Error:", error.message); 
+        console.error(error.stack); 
         throw error;
     }
 }
 
 export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
     try {
-        await client.query('BEGIN'); // Start a transaction
+        //start a transaction
+        await client.query('BEGIN'); 
 
         const getFileQuery = 'SELECT * FROM files WHERE id = $1';
         const getFileValues = [fileId];
@@ -167,7 +164,6 @@ export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
 };
 
 export const getFileHistory = async (fileId: number, client: any): Promise<QueryResult> => {
-
     try {
         const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
         const result = await client.query(query, [fileId]);
