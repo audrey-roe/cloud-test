@@ -1,7 +1,7 @@
 import { Express, Request, Response } from "express";
-import { loginUserHandler, createUserHandler, deleteUserHandler } from './controller/user.controller';
+import { loginUserHandler, createUserHandler, deleteUserHandler, revokeSession } from './controller/user.controller';
 import { getFileHandler, streamFileHandler, uploadFileHandler, handleCreateFolder, markAndDeleteUnsafeFileController, getFileHistoryController} from "./controller/files.controller";
-import verifyAccessToken from "./middleware/requrieUser";
+import {verifyAccessToken, createOrUpdateSession} from "./middleware/requrieUser";
 import isAdmin from "./middleware/isAdmin";
 import multer from 'multer';
 
@@ -12,6 +12,7 @@ function routes(app: Express){
     app.post('/api/login', loginUserHandler);
     app.post('/api/user', createUserHandler);
     app.delete('/api/user', deleteUserHandler);
+    app.post('/revokeSession', revokeSession);
     app.put('/api/file/upload', verifyAccessToken, upload.single('file'), uploadFileHandler);
     app.get('/api/file/download/:fileId', verifyAccessToken, getFileHandler); //done 
     app.get('/api/file/stream/:fileName', verifyAccessToken, streamFileHandler);

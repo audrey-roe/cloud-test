@@ -13,6 +13,7 @@ export class User {
   files: File[] = [];
   folders: Folder[] = [];
   rootFolders: Folder[] = [];
+  session_id!: string;
   isSessionRevoked!: boolean;
   isAdmin!: boolean;
 

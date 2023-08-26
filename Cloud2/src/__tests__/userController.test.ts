@@ -21,7 +21,21 @@ describe('User', () => {
             process.env.jwtSecret = 'jwtsecretszdvmsvpkmock'
 
             beforeEach(() => {
-                mockRequest = {};
+                mockRequest = {
+                    session: {
+                        id: 'mockSessionId',
+                        cookie: {
+                            originalMaxAge: null,
+                        },
+                        regenerate: jest.fn(),
+                        destroy: jest.fn(),
+                        reload: jest.fn(),
+                        save: jest.fn(),
+                        touch: jest.fn(),
+                        resetMaxAge: jest.fn() 
+                        // ... Add any other needed properties or methods from Session
+                    }
+                };
                 mockResponse = {
                     status: jest.fn(() => mockResponse) as unknown as jest.MockedFunction<Response['status']>,
                     json: jest.fn(),
@@ -50,6 +64,7 @@ describe('User', () => {
                     files: [],
                     folders: [],
                     rootFolders: [],
+                    session_id:'session',
                     isSessionRevoked: false,
                     isAdmin: false,
                     hashPassword: jest.fn(),
@@ -60,8 +75,8 @@ describe('User', () => {
 
                 mockRequest.body = userInput;
 
-                await createUserHandler(mockRequest as Request, mockResponse as Response, nextFunction);
-
+                const result = await createUserHandler(mockRequest as Request, mockResponse as Response, nextFunction);
+                console.log(result);
                 expect((mockResponse.status as jest.MockedFunction<any>).mock.calls.length).toBe(1);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(201);
@@ -70,14 +85,13 @@ describe('User', () => {
             });
 
             it('should return status code 500 if JWT secret is not configured', async () => {
-                const mockRequest: Partial<Request> = {
-                    body: {
-                        name: 'Test User',
-                        email: 'test@example.com',
-                        password: 'password123',
-                        is_admin: false
-                    }
+                mockRequest.body = {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    password: 'password123',
+                    is_admin: false
                 };
+            
 
                 const mockResponse: Partial<Response> = {
                     status: jest.fn(() => mockResponse) as unknown as jest.MockedFunction<Response['status']>,
@@ -93,30 +107,23 @@ describe('User', () => {
             });
 
             it('should return status code 409 and error message if createUser function throws an error', async () => {
-                const mockRequest: Partial<Request> = {
-                    body: {
-                        name: 'Test User',
-                        email: 'test@example.com',
-                        password: 'password123',
-                        is_admin: false
-                    }
+                mockRequest.body = {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    password: 'password123',
+                    is_admin: false
                 };
-
-                const mockResponse: Partial<Response> = {
-                    status: jest.fn(() => mockResponse) as unknown as jest.MockedFunction<Response['status']>,
-                    send: jest.fn()
-                };
-
+            
                 const mockError = new AppError('Failed to create user', 409);
-
+            
                 jest.spyOn(userService, 'createUser').mockRejectedValue(mockError);
-
+            
                 await createUserHandler(mockRequest as Request, mockResponse as Response, nextFunction);
-
+            
                 expect(mockResponse.status).toHaveBeenCalledWith(409);
                 expect(mockResponse.send).toHaveBeenCalledWith('Failed to create user');
             });
-
+            
             it('should not accept invalid full name', async () => {
                 // Use a single-word name to trigger validation error
                 mockRequest.body = {
@@ -158,8 +165,6 @@ describe('User', () => {
                     ]),
                 }));
             });
-            
-            
         })
     })
 })

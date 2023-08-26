@@ -51,8 +51,6 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
         const response = await s3.send(new GetObjectCommand(params));
         let fileBuffer: Buffer;
 
-        console.log(response)
-
         const body = response.Body as unknown as AsyncIterable<Uint8Array>;
         console.log(body)
         if (body) {

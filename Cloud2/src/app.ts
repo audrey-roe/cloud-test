@@ -8,7 +8,7 @@ import routes from "./routes";
 import config from '../config/defaults';
 import dotenv from 'dotenv';
 import multer from 'multer';
-
+import pool from './utils/pool'
 const storage = multer.memoryStorage(); 
 const upload = multer({ storage });
 
@@ -40,6 +40,30 @@ app.use(session({
     maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
+
+
+// app.use(async (req, res, next) => {
+//   const userId = req.session.userId;
+
+//   if (userId) {
+//       const pgPool = await pool.connect();
+//       const query = 'SELECT session_id FROM users WHERE id = $1';
+//       const value = [userId]
+//       const result = await pgPool.query(query, value);
+//       const sessionId = result.rows[0].session_id;
+
+//       if (sessionId !== req.session.id) {
+//           req.session.destroy(err => {
+//               if (err) {
+//                   return next(err);
+//               }
+//               res.status(401).send('Session has been revoked');
+//           });
+//           return;
+//       }
+//   }
+//   next();
+// });
 
 
 app.listen(port, async () => {

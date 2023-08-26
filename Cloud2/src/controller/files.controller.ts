@@ -7,14 +7,7 @@ import { z } from 'zod';
 import { S3Client } from "@aws-sdk/client-s3";
 import path from 'path';
 import fs from 'fs';
-
-const pool = new Pool({
-  user: "alex",
-  password: "alex",
-  database: "newdatabase",
-  host: "localhost",
-  port: 5432,
-});
+import pool from '../utils/pool'
 
 export const getS3Client = () => {
   return new S3Client({

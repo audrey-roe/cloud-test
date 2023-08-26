@@ -13,6 +13,7 @@ describe('User', () => {
         is_admin: false
 
       };
+      const session_id ='session_id';
       const existingUserResult = {
         rows: []
       };
@@ -48,7 +49,7 @@ describe('User', () => {
         }));
         // process.env.saltWorkFactor=10
         // Act
-        const result = await createUser(userInput, mockClient);
+        const result = await createUser(userInput, mockClient, session_id);
 
         // Assert
         expect(mockClient.query).toHaveBeenCalledTimes(2);
@@ -60,8 +61,8 @@ describe('User', () => {
 
         // Expect the INSERT query
         const expectedInsertQueryPart = `
-              INSERT INTO users (name, email, password, is_admin)
-              VALUES ($1, $2, $3, $4)
+              INSERT INTO users (name, email, password, is_admin, session_id)
+              VALUES ($1, $2, $3, $4, $5)
               RETURNING *;
         `;
         const actualInsertQueryPart = mockClient.query.mock.calls[1][0].text;
@@ -103,7 +104,7 @@ describe('User', () => {
           hash: jest.fn().mockResolvedValue('hashedPassword')
         }));
         // Act
-        const result = await createUser(userInput, mockClient);
+        const result = await createUser(userInput, mockClient, session_id);
 
         // Assert
         expect(mockClient.query).toHaveBeenCalledTimes(2);
@@ -113,8 +114,8 @@ describe('User', () => {
         });
 
         const expectedInsertQueryPart = `
-            INSERT INTO users (name, email, password, is_admin)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO users (name, email, password, is_admin, session_id)
+            VALUES ($1, $2, $3, $4, $5)
             RETURNING *;
       `;
         const actualInsertQueryPart = mockClient.query.mock.calls[1][0].text;
@@ -126,7 +127,7 @@ describe('User', () => {
         // Arrange
         //...
         // Act and Assert
-        await expect(createUser(userInput, mockClient)).rejects.toThrowError();
+        await expect(createUser(userInput, mockClient, session_id)).rejects.toThrowError();
       });
       
     });
