@@ -161,6 +161,7 @@ export async function getFileHistoryController(req: Request, res: Response) {
     const history = await getFileHistory(fileId, client);
     res.status(200).json({ history: history.rows });
   } catch (error) {
+    
     res.status(500).json({ error: 'An error occurred while retrieving file history.' });
   }
 }

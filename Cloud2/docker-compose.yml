@@ -8,11 +8,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "1337:1337"
-    environment:
-      DATABASE_URL: postgres://alex:alex@db:5432/newdatabase
-      REDIS_URL: redis://redis:6379
-      AWS_ACCESS_KEY_ID: your_access_key
-      AWS_SECRET_ACCESS_KEY: your_secret_key
+    env_file: .env
     depends_on:
       - db
       - redis

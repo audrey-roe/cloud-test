@@ -37,13 +37,10 @@ app.use(session({
   cookie: {
     secure: false,//if true only transmit over https TODO change to true for porduction
     httpOnly: false,
-    maxAge: 4500 * 60 * 10 //setting the session age in millisec (45mins)
+    maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
-app.use((req, res, next) => {
-  res.locals.user = req.session.user;
-  next();
-});
+
 
 app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);

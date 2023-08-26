@@ -14,10 +14,8 @@ const client = new Pool({
     port: 5432,
 });
 
-
 export const createUserHandler = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        console.log(req.body)
 
         const validInput = createUserSchema.parse(req);
         const is_admin = validInput.body.is_admin || false;
@@ -91,4 +89,4 @@ export async function getUserFromDatabase(userId: number): Promise<any | null> {
       console.error('Error querying for user:', err);
       throw err;
     }
-  }
+}
