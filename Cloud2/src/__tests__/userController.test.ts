@@ -76,7 +76,6 @@ describe('User', () => {
                 mockRequest.body = userInput;
 
                 const result = await createUserHandler(mockRequest as Request, mockResponse as Response, nextFunction);
-                console.log(result);
                 expect((mockResponse.status as jest.MockedFunction<any>).mock.calls.length).toBe(1);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(201);

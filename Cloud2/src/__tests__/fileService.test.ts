@@ -1,11 +1,7 @@
 import { S3Client } from "@aws-sdk/client-s3";
 import { createFolder, downloadFromS3, getFileHistory, uploadFileToDatabase } from "../service/file.service";
 import logger from "../utils/logger";
-import pool from "../utils/db";
-
-jest.mock('../utils/db', () => ({
-  connect: jest.fn()
-}));
+// import pool from "../utils/db";
 
 jest.mock("@aws-sdk/client-s3");
 jest.mock("../utils/logger", () => ({
@@ -253,7 +249,7 @@ describe("File", () => {
           end: jest.fn()
         }))
       }));
-      // Tests that the function returns a QueryResult object with empty rows when given a valid fileId with no history and a mock client.
+
       it('should return a QueryResult object with empty rows when given a valid fileId with no history and a mock client', async () => {
        
         const result = await getFileHistory(2, mockClient);
@@ -264,12 +260,15 @@ describe("File", () => {
       });
 
       it('should throw an error when given an invalid fileId and client', async () => {
-        const mockQuery = jest.fn().mockRejectedValueOnce(new Error('Invalid fileId'));
+        const mockQuery = jest.fn().mockRejectedValue(new Error('Invalid fileId'));
+        
         const mockClient = { query: mockQuery };
-
-        await expect(getFileHistory(0, mockClient)).rejects.toThrow('Invalid fileId');
-        expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM fileHistory WHERE fileId = $1', [0]);
-      });
+    
+        await expect(getFileHistory(1, mockClient)).rejects.toThrow('Invalid fileId');
+    
+        expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM fileHistory WHERE fileId = $1', [1]);
+    });
+    
     });
 
   });

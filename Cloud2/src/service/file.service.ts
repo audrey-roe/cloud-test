@@ -1,5 +1,5 @@
-import { Pool, QueryResult } from 'pg';
-import { PutObjectCommand, S3Client, S3, GetObjectCommand } from "@aws-sdk/client-s3";
+import { QueryResult } from 'pg';
+import { PutObjectCommand, GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import logger from '../utils/logger';
 import { Folder } from '../models/folder.models';
 
@@ -52,7 +52,6 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
         let fileBuffer: Buffer;
 
         const body = response.Body as unknown as AsyncIterable<Uint8Array>;
-        console.log(body)
         if (body) {
             const fileBuffer = await asyncIteratorToBuffer(body);
             return fileBuffer;
@@ -62,7 +61,7 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
         throw err;
     };
 };
-export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<void> => {
+export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<{ fileId: number, fileName: string }> => {
     try {
         await client.query('BEGIN');
 
@@ -80,12 +79,16 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
         await client.query(historyQuery, historyValues);
 
         await client.query('COMMIT');
+        return { 
+            fileId: fileId,
+            fileName: fileName
+        }; 
+
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
     }
 };
-
 
 export const getFileFromDatabase = async (fileId: string, client: any): Promise<QueryResult> => {
     try {
@@ -169,15 +172,29 @@ export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
 
 export const getFileHistory = async (fileId: number, client: any): Promise<QueryResult> => {
     try {
-        console.log(fileId)
-
         const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
         const result = await client.query(query, [fileId]);
         return result;
     } catch (error:any) {
-        console.error("Database error:", error); 
-        console.error(error.stack); 
+        console.log("Fetching history for fileId:", fileId);
 
+        console.error("Database error:", error.message); 
         throw error;
     }
 };
+
+export const streamFromR2 = async (fileName: string, s3: S3Client) => {
+  
+    const params = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: fileName,
+    };
+  
+    const response = await s3.send(new GetObjectCommand(params));
+    
+    if (response.Body) {
+      return response.Body;
+    }
+  
+    throw new Error("File not found or failed to stream.");
+  };

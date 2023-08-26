@@ -40,7 +40,7 @@ app.use(session({
     maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
-// Sample route to test
+// sample route to test fro the session
 app.get('/test', (req, res) => {
   if(!req.session.views) {
     req.session.views = 1;
@@ -49,13 +49,6 @@ app.get('/test', (req, res) => {
   }
   res.send(`You have visited this page ${req.session.views} times`);
 });
-
-app.use((req, res, next) => {
-  console.log(req.sessionID);
-  next();
-});
-
-
 
 app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);
