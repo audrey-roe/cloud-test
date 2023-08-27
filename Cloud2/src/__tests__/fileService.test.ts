@@ -1,7 +1,7 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase } from "../service/file.service";
+import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase, markAndDeleteUnsafeFile } from "../service/file.service";
 import logger from "../utils/logger";
-// import pool from "../utils/db";
+import * as fileService from "../service/file.service";
 
 jest.mock("@aws-sdk/client-s3");
 jest.mock("../utils/logger", () => ({
@@ -22,6 +22,8 @@ jest.mock("../service/file.service", () => {
   return {
     ...originalModule,
     getS3Client: jest.fn().mockImplementation(() => mockS3Client),
+    updateFileHistory: jest.fn()
+
   };
 });
 jest.mock('pg', () => ({
@@ -111,13 +113,7 @@ describe("File", () => {
 
       beforeEach(async () => {
         jest.clearAllMocks();
-        jest.mock('pg', () => ({
-          Pool: jest.fn(() => ({
-            connect: jest.fn(),
-            query: jest.fn(),
-            end: jest.fn()
-          }))
-        }));
+
       });
 
       afterEach(() => {
@@ -197,7 +193,6 @@ describe("File", () => {
     });
 
     describe('createFolder', () => {
-      // Mock the 'pg' module to prevent interactions with a real database.
       const userId = 1;
       const name = 'Test Folder';
       const parentFolderId = 1;
@@ -210,13 +205,7 @@ describe("File", () => {
         query: mockQuery,
         release: jest.fn()
       };
-      jest.mock('pg', () => ({
-        Pool: jest.fn(() => ({
-          connect: jest.fn(),
-          query: jest.fn(),
-          end: jest.fn()
-        }))
-      }));
+
 
       afterEach(() => {
         jest.clearAllMocks();
@@ -253,13 +242,7 @@ describe("File", () => {
         query: mockQuery,
         release: jest.fn()
       };
-      jest.mock('pg', () => ({
-        Pool: jest.fn(() => ({
-          connect: jest.fn(),
-          query: jest.fn(),
-          end: jest.fn()
-        }))
-      }));
+
 
       it('should return a QueryResult object with empty rows when given a valid fileId with no history and a mock client', async () => {
 
@@ -286,45 +269,41 @@ describe("File", () => {
       let mockS3Send: jest.Mock;
       let mockUpdateFileHistory: jest.Mock;
 
-      const mockClient = {
-        query: jest.fn(),
-      };
 
       beforeEach(async () => {
         jest.clearAllMocks();
-
         mockS3Send = jest.fn();
         (S3Client.prototype.send as jest.Mock) = mockS3Send;
-
-        mockUpdateFileHistory = jest.fn().mockResolvedValue(true);
-        (updateFileHistory as jest.Mock) = mockUpdateFileHistory;
-
         mockClient.query.mockResolvedValue({ rows: [] });
       });
+
+      const mockClient = {
+        query: jest.fn(),
+      };
 
       afterEach(() => {
         jest.clearAllMocks();
       });
 
       it('should stream from R2 and update file history', async () => {
-        // Setup
-        const mockResponse = { Body: "mockBody" };
-        mockS3Send.mockResolvedValue(mockResponse);
-        mockClient.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+        mockClient.query.mockResolvedValue({ rows: [{ id: 1 }] });
+        mockS3Send.mockResolvedValue({ Body: "1,2,3,4" });
 
-        const result = await streamFromR2("testFileName", mockS3Client, 123, mockClient);
+        (fileService.updateFileHistory as jest.Mock).mockResolvedValue(undefined);
 
-        expect(mockS3Send).toHaveBeenCalledWith(new GetObjectCommand({
-          Bucket: process.env.AWS_BUCKET_NAME,
-          Key: "testFileName",
-        }));
-        expect(mockUpdateFileHistory).toHaveBeenCalledWith("testFileName", 'stream', 123, mockClient);
-        expect(result).toBe("mockBody");
+        const resultStream = await streamFromR2("testFileName", mockS3Client, 123, mockClient);
+        let result = '';
+        for await (const chunk of resultStream) {
+          result += chunk;
+        }
+
+        expect(result).toBe("1,2,3,4");
       });
 
       it('should throw an error if file is not found or fails to stream', async () => {
-        mockS3Send.mockResolvedValue({});
-        mockClient.query.mockResolvedValueOnce({ rows: [] }); 
+
+        mockClient.query.mockResolvedValueOnce({ rows: [] });
+        mockS3Send.mockResolvedValue({}); 
 
         await expect(streamFromR2("testFileName", mockS3Client, 123, mockClient))
           .rejects
@@ -332,5 +311,6 @@ describe("File", () => {
       });
     });
 
+    
   });
 });

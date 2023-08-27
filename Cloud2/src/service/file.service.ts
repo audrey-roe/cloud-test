@@ -4,7 +4,7 @@ import logger from '../utils/logger';
 import { Folder } from '../models/folder.models';
 
 
-export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string, s3:any) => {
+export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string, s3: any) => {
     // const s3 = getS3Client();
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
         logger.error("AWS credentials are not set!");
@@ -38,7 +38,7 @@ const asyncIteratorToBuffer = async (asyncIterator: AsyncIterable<Uint8Array>): 
     return Buffer.concat(chunks);
 };
 
-export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> => {
+export const downloadFromS3 = async (fileName: string, s3: any): Promise<Buffer> => {
     // const s3 = getS3Client();
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
         logger.error("AWS credentials are not set!");
@@ -81,10 +81,10 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
         await client.query(historyQuery, historyValues);
 
         await client.query('COMMIT');
-        return { 
+        return {
             fileId: fileId,
             fileName: fileName
-        }; 
+        };
 
     } catch (error) {
         await client.query('ROLLBACK');
@@ -109,7 +109,7 @@ export const getFileFromDatabase = async (fileId: string, client: any): Promise<
     }
 };
 
-export async function createFolder(userId: number, name: string, client: any,  parentFolderId?: number | null): Promise<Folder> {
+export async function createFolder(userId: number, name: string, client: any, parentFolderId?: number | null): Promise<Folder> {
 
     const queryText = `INSERT INTO folders (name, owner_id, parent_folder_id)
                 VALUES ($1, $2, $3)
@@ -121,8 +121,8 @@ export async function createFolder(userId: number, name: string, client: any,  p
         const result = await client.query(queryText, values);
 
         return result.rows[0];
-    } catch (error:any) {
-        console.error("Database Query Error:", error.message); 
+    } catch (error: any) {
+        console.error("Database Query Error:", error.message);
         // console.error(error.stack); 
         throw error;
     }
@@ -131,7 +131,7 @@ export async function createFolder(userId: number, name: string, client: any,  p
 export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
     try {
         //start a transaction
-        await client.query('BEGIN'); 
+        await client.query('BEGIN');
 
         const getFileQuery = 'SELECT * FROM files WHERE id = $1';
         const getFileValues = [fileId];
@@ -152,10 +152,10 @@ export async function markAndDeleteUnsafeFile(fileId: number, client: any) {
 
                 const deleteHistoryQuery = 'DELETE FROM fileHistory WHERE fileid = $1';
                 await client.query(deleteHistoryQuery, [fileId]);
-                
+
                 const deleteFileQuery = 'DELETE FROM files WHERE id = $1';
                 await client.query(deleteFileQuery, [fileId]);
-                
+
                 logger.info('here is file');
                 await client.query('COMMIT');
             } catch (error: any) {
@@ -177,10 +177,10 @@ export const getFileHistory = async (fileId: number, client: any): Promise<Query
         const query = 'SELECT * FROM fileHistory WHERE fileId = $1';
         const result = await client.query(query, [fileId]);
         return result;
-    } catch (error:any) {
+    } catch (error: any) {
         console.log("Fetching history for fileId:", fileId);
 
-        console.error("Database error:", error.message); 
+        console.error("Database error:", error.message);
         throw error;
     }
 };
@@ -190,15 +190,23 @@ export const streamFromR2 = async (fileName: string, s3: any, userId: number, cl
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: fileName,
     };
-  
+
     const response = await s3.send(new GetObjectCommand(params));
+    try {
 
-    await updateFileHistory(fileName, 'stream', userId, client);
 
-    if (response.Body) {
-      return response.Body;
+        await updateFileHistory(fileName, 'stream', userId, client);
+    } catch (error: any) {
+        if (error.message === 'File not found in the database') {
+            throw new Error('File not found or failed to stream.');
+        } else {
+            throw error;
+        }
     }
-  
+    if (response.Body) {
+        return response.Body;
+    }
+
     throw new Error("File not found or failed to stream.");
 };
 
@@ -209,9 +217,9 @@ export const updateFileHistory = async (fileName: string, action: string, userId
         const fetchIdQuery = 'SELECT id FROM files WHERE file_name = $1 AND ownerid = $2';
         const fileIdResult = await client.query(fetchIdQuery, [fileName, userId]);
 
-        // if (!fileIdResult.rows.length) {
-        //     throw new Error('File not found in the database');
-        // }
+        if (!fileIdResult || !fileIdResult.rows.length) {
+            throw new Error('File not found in the database');
+        }
 
         const fileId = fileIdResult.rows[0].id;
         const historyQuery = 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)';

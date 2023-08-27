@@ -8,7 +8,6 @@ import { QueryResult } from "pg";
 
 jest.mock('../service/file.service');
 
-
 describe('File', () => {
 
     describe('FileController', () => {
@@ -85,6 +84,7 @@ describe('File', () => {
                 // expect(uploadFileToDatabase).toHaveBeenCalledWith('testFile.jpg', 'mockETagValue', 'image/jpeg', 123);
 
             });
+
             it('should throw an error when file size is more than 200MB', async () => {
                 mockRequest.file = {
                     originalname: 'testFile.jpg',
@@ -107,11 +107,13 @@ describe('File', () => {
                 await expect(uploadFileHandler(mockRequest as Request, mockResponse as Response))
                     .rejects.toThrow('File size exceeds the 200MB limit');
             });
+
             it('should throw an error if no file is provided', async () => {
                 mockRequest.file = undefined;
 
                 await expect(uploadFileHandler(mockRequest as Request, mockResponse as Response)).rejects.toThrow('Upload file failed');
             });
+
             it('should return 404 if S3 upload fails', async () => {
                 mockRequest.file = {
                     originalname: 'testFile.jpg',
@@ -134,7 +136,7 @@ describe('File', () => {
                 mockResponse.locals = { userId: 123 };
                 const mockS3Response = {
                     $metadata: {
-                        httpStatusCode: 404,
+                        httpStatusCode: 404,//<==
                         requestId: 'someRequestId',
                         extendedRequestId: 'someExtendedRequestId',
                         cfId: 'someCfId',
@@ -142,13 +144,14 @@ describe('File', () => {
                         totalRetryDelay: 0
                     }
                 };
-                jest.spyOn(fileService, 'uploadToS3').mockResolvedValue(mockS3Response);  // Simulate S3 failure by returning a 404 object.
+                jest.spyOn(fileService, 'uploadToS3').mockResolvedValue(mockS3Response);  // simulating S3 failure by returning a 404 object.
 
                 await uploadFileHandler(mockRequest as Request, mockResponse as Response);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(404);
                 expect(mockResponse.json).toHaveBeenCalledWith({ error: 'Failed to upload file to S3' });
             });
+
             it('should return 500 for generic errors', async () => {
                 mockRequest.file = {
                     originalname: 'testFile.jpg',
@@ -355,17 +358,16 @@ describe('File', () => {
 
         });
 
-
         describe('getFileHistoryController', () => {
 
-            // Mock the service function to control its behavior
+            // mokcking the service function to control its behavior
             const mockGetFileHistory = getFileHistory as jest.MockedFunction<typeof getFileHistory>;
             let mockRequest: Partial<Request> & { params: { fileId: string } };
             let mockResponse: Partial<Response>;
 
             beforeEach(() => {
                 mockRequest = {
-                    params: { fileId: '1' }  // Set an initial value here
+                    params: { fileId: '1' } 
                 };
                 mockResponse = {
                     status: jest.fn().mockReturnThis(),
