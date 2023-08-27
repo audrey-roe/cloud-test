@@ -58,13 +58,13 @@ A robust cloud backup system that serves as a platform for users to backup, mana
 1. Clone this repository.
    
    ```bash
-   git clone [https://github.com/audrey-roe/cloud-test.git]
+   git clone https://github.com/audrey-roe/cloud-test.git
    ```
 
 2. Navigate to the directory.
 
    ```bash
-   cd [Cloud2]
+   cd Cloud2
    ```
 
 3. Install dependencies.
