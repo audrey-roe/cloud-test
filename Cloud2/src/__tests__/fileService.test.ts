@@ -1,5 +1,5 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase, getFileFromDatabase, markAndDeleteUnsafeFile } from "../service/file.service";
+import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase, getFileFromDatabase, markAndDeleteUnsafeFile, reviewFileService } from "../service/file.service";
 import logger from "../utils/logger";
 import * as fileService from "../service/file.service";
 
@@ -398,7 +398,7 @@ describe("File", () => {
       });
     });
 
-      describe('getFileFromDatabase', () => {
+    describe('getFileFromDatabase', () => {
         let mockClient: any;
 
         beforeEach(() => {
@@ -437,6 +437,48 @@ describe("File", () => {
           await expect(getFileFromDatabase('123', mockClient)).rejects.toThrow('Database error');
         });
     });
+
+
+
+describe('reviewFileService', () => {
+  const mockClient = {
+    query: jest.fn()
+  };
+
+  beforeEach(() => {
+    mockClient.query.mockClear();
+  });
+
+  it('should successfully review a file and delete it', async () => {
+    mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
+      rows: [{ count: '2' }]
+    });
+
+    const response = await reviewFileService(1, 1, true, mockClient);
+
+    expect(response).toBe("File and its history successfully deleted.");
+  });
+
+  it('should successfully review a file and return the number of approvals needed', async () => {
+    mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
+      rows: [{ count: '1' }]
+    });
+
+    const response = await reviewFileService(1, 1, true, mockClient);
+
+    expect(response).toBe("You have successfully marked the file for deletion. This file will be deleted when it is approved by 1 other administrative users.");
+  });
+
+  it('should handle exceptions and return an error message', async () => {
+    mockClient.query.mockRejectedValue(new Error('Database error'));
+
+    const response = await reviewFileService(1, 1, true, mockClient);
+
+    expect(response).toBe("An error occurred during the file review process.");
+  });
+});
+
+
 
   });
 });
