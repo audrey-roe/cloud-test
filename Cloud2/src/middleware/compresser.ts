@@ -2,6 +2,8 @@ import sharp from 'sharp';
 import ffmpeg from 'fluent-ffmpeg';
 import { Readable, PassThrough } from 'stream';
 
+// Middleware that compresses files before they are uploaded to the s3 bucket
+
 ffmpeg.setFfmpegPath(require('@ffmpeg-installer/ffmpeg').path);
 
 function bufferToStream(buffer: Buffer): Readable {

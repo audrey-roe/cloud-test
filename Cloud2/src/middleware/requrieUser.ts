@@ -4,6 +4,8 @@ import logger from '../utils/logger';
 import pool from '../utils/pool';
 import { QueryResult } from 'pg';
 
+// Middleware that verifies accesstoken and requires user authentication
+
 export const verifyAccessToken = async (req: Request, res: Response, next: NextFunction) => {
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
