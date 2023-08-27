@@ -1,6 +1,6 @@
-import { uploadFileHandler, handleCreateFolder, getFileHandler, getFileHistoryController, markAndDeleteUnsafeFileController, getS3Client, streamFileController } from "../controller/files.controller";
+import { uploadFileHandler, handleCreateFolder, getFileHandler, getFileHistoryController, markAndDeleteUnsafeFileController, getS3Client, streamFileController, reviewFile } from "../controller/files.controller";
 import { Response, Request } from 'express';
-import { uploadToS3, createFolder, getFileHistory, streamFromR2 } from '../service/file.service';
+import { uploadToS3, createFolder, getFileHistory, streamFromR2, reviewFileService } from '../service/file.service';
 import { uploadFileToDatabase, markAndDeleteUnsafeFile } from '../service/file.service';
 import { Readable } from "stream";
 import * as fileService from '../service/file.service';
@@ -542,5 +542,52 @@ describe('File', () => {
             });
         });
 
+        describe('reviewFile', () => {
+        let mockReq: Partial<Request>;
+        let mockRes: Partial<Response>;
+        const mockNext = jest.fn();
+
+        beforeEach(() => {
+            mockReq = {
+            params: { fileId: '123' },
+            body: { userId: '456', decision: 'approved' },
+            };
+            mockRes = {
+            status: jest.fn().mockReturnThis(),
+            send: jest.fn(),
+            };
+        });
+
+        afterEach(() => {
+            jest.clearAllMocks();
+        });
+
+        it('should successfully review a file and send a 200 status', async () => {
+            (reviewFileService as jest.Mock).mockResolvedValue('File reviewed successfully');
+
+            await reviewFile(mockReq as Request, mockRes as Response);
+
+            expect(mockRes.status).toHaveBeenCalledWith(200);
+            expect(mockRes.send).toHaveBeenCalledWith({ message: 'File reviewed successfully' });
+        });
+
+        it('should send a 400 status if the service returns an error-like message', async () => {
+            (reviewFileService as jest.Mock).mockResolvedValue('Some error message');
+
+            await reviewFile(mockReq as Request, mockRes as Response);
+
+            expect(mockRes.status).toHaveBeenCalledWith(400);
+            expect(mockRes.send).toHaveBeenCalledWith({ message: 'Some error message' });
+        });
+
+        it('should handle exceptions and send a 500 status', async () => {
+            (reviewFileService as jest.Mock).mockRejectedValue(new Error('Failed to review'));
+
+            await reviewFile(mockReq as Request, mockRes as Response);
+
+            expect(mockRes.status).toHaveBeenCalledWith(500);
+            expect(mockRes.send).toHaveBeenCalledWith({ error: 'An error occurred while reviewing the file' });
+        });
+        });
     })
 })

@@ -3,6 +3,7 @@ CREATE TABLE users(
   name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   password TEXT NOT NULL
+  is_admin BOOLEAN DEFAULT false
 );
 
 CREATE TABLE files (
@@ -16,6 +17,14 @@ CREATE TABLE files (
   is_pending_deletion BOOLEAN DEFAULT false,
   ownerid INTEGER,
   folder_id INTEGER
+);
+
+CREATE TABLE admin_file_reviews (
+  id SERIAL PRIMARY KEY,
+  file_id INTEGER REFERENCES files(id),
+  admin_id INTEGER REFERENCES users(id),
+  reviewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  decision BOOLEAN
 );
 
 CREATE TABLE fileHistory (

@@ -2,6 +2,7 @@ import { QueryResult } from 'pg';
 import { PutObjectCommand, GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import logger from '../utils/logger';
 import { Folder } from '../models/folder.models';
+import { query } from 'express';
 
 
 export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentType: string, s3: any) => {
@@ -30,6 +31,7 @@ export const uploadToS3 = async (fileStream: Buffer, fileName: string, contentTy
         throw err;
     }
 };
+
 const asyncIteratorToBuffer = async (asyncIterator: AsyncIterable<Uint8Array>): Promise<Buffer> => {
     const chunks: Uint8Array[] = [];
     for await (const chunk of asyncIterator) {
@@ -180,7 +182,7 @@ export const getFileHistory = async (fileId: number, client: any): Promise<Query
     } catch (error: any) {
         console.log("Fetching history for fileId:", fileId);
 
-        console.error("Database error:", error.message);
+        // console.error("Database error:", error.message);
         throw error;
     }
 };
@@ -231,3 +233,42 @@ export const updateFileHistory = async (fileName: string, action: string, userId
         throw error;
     }
 };
+
+const approvalNeeded = 2;  
+
+export const reviewFileService = async (fileId: number, adminId: number, decision: boolean, client: any): Promise<string> => {
+    try {
+        const insertQuery = 'INSERT INTO admin_file_reviews (file_id, admin_id, decision) VALUES ($1, $2, $3)';
+        await client.query(
+            insertQuery,
+            [fileId, adminId, decision]
+        );
+
+        const threshold_query = `SELECT COUNT(*) as count FROM admin_file_reviews WHERE file_id = $1 AND decision = true`;
+        const { rows } = await client.query(
+            threshold_query,
+            [fileId]
+        );
+
+        const approvalCount = parseInt(rows[0].count, 10);
+        const approvalsRemaining = approvalNeeded - approvalCount;
+
+        if (approvalCount >= approvalNeeded) {
+            const deleteFileQuery = `DELETE FROM files WHERE id = $1`;
+            const deleteHistoryQuery = `DELETE FROM fileHistory WHERE fileid = $1`;
+            
+            await client.query(deleteFileQuery, [fileId]);
+            await client.query(deleteHistoryQuery, [fileId]);
+            
+            return "File and its history successfully deleted.";
+
+        } else {
+            return `You have successfully marked the file for deletion. This file will be deleted when it is approved by ${approvalsRemaining} other administrative users.`;
+        }
+
+    } catch (error) {
+        console.error("Error in reviewFileService:", error);
+        return "An error occurred during the file review process.";
+    }
+};
+

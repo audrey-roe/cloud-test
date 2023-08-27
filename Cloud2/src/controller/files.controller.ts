@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, createFolder, markAndDeleteUnsafeFile, getFileHistory, downloadFromS3, streamFromR2 } from '../service/file.service';
+import { uploadToS3, uploadFileToDatabase, getFileFromDatabase, createFolder, markAndDeleteUnsafeFile, getFileHistory, downloadFromS3, streamFromR2, reviewFileService } from '../service/file.service';
 import { Pool } from 'pg';
 import logger from '../utils/logger';
 import { createFolderSchema } from '../schema/file.schema';
@@ -64,6 +64,7 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
     }
   }
 };
+
 export const getFileHandler = async (req: Request, res: Response) => {
 
   const fileId = req.params.fileId;
@@ -167,3 +168,25 @@ export const streamFileController = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 };
+
+
+export const reviewFile = async (req: Request, res: Response) => {
+  try {
+      const fileId = parseInt(req.params.fileId, 10);
+      const adminId = req.body.userId;
+      const decision = req.body.decision; 
+      const client = await pool.connect();
+
+      const resultMessage = await reviewFileService(fileId, adminId, decision, client);
+
+      if (resultMessage.includes("successfully")) {
+          res.status(200).send({ message: resultMessage });
+      } else {
+          res.status(400).send({ message: resultMessage });
+      }
+
+  } catch (error) {
+      res.status(500).send({ error: "An error occurred while reviewing the file" });
+  }
+};
+
