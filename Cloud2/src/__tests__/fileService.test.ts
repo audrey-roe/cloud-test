@@ -303,7 +303,7 @@ describe("File", () => {
       it('should throw an error if file is not found or fails to stream', async () => {
 
         mockClient.query.mockResolvedValueOnce({ rows: [] });
-        mockS3Send.mockResolvedValue({}); 
+        mockS3Send.mockResolvedValue({});
 
         await expect(streamFromR2("testFileName", mockS3Client, 123, mockClient))
           .rejects
@@ -311,6 +311,51 @@ describe("File", () => {
       });
     });
 
+
+    describe('markAndDeleteUnsafeFile', () => {
+      let mockClient: any;
+
+      beforeEach(() => {
+        mockClient = {
+          query: jest.fn(),
+        };
+      });
+
+      afterEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it('should throw an error if file is not found', async () => {
+        mockClient.query.mockResolvedValue({ rows: [] }); 
     
+        await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('File not found.');
+    });
+    
+    it('should throw an error if file type is not supported', async () => {
+        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'text/plain' }] }); 
+    
+        await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('File type is not supported for marking as unsafe and deleting.');
+    });
+    
+    it('should mark as unsafe and delete if file type is image or video', async () => {
+        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'image/png' }] }); 
+    
+        await markAndDeleteUnsafeFile(123, mockClient);
+    
+        expect(mockClient.query).toHaveBeenCalledWith('UPDATE files SET is_unsafe = true WHERE id = $1', [123]);
+        expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM fileHistory WHERE fileid = $1', [123]);
+        expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM files WHERE id = $1', [123]);
+    });
+
+      it('should rollback if any operation fails', async () => {
+        mockClient.query.mockResolvedValueOnce({ rows: [{ media_type: 'image/png' }] });
+        mockClient.query.mockImplementationOnce(() => {
+          throw new Error('DB error');
+        });
+
+        await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('DB error');
+        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      });
+    });
   });
 });
