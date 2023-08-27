@@ -75,12 +75,12 @@ describe('File', () => {
                 };
 
                 uploadToS3Spy.mockResolvedValue(mockS3Response)
-                uploadFileToDatabaseSpy.mockResolvedValue(9999);
+                uploadFileToDatabaseSpy.mockResolvedValue({ fileId: 9999, fileName: 'string'} );
 
                 await uploadFileHandler(mockRequest as Request, mockResponse as Response);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(201);
-                expect(mockResponse.json).toHaveBeenCalledWith({  message: 'File uploaded successfully' , "fileId": 9999 });
+                expect(mockResponse.json).toHaveBeenCalledWith({  message: 'File uploaded successfully' , 'fileId': 9999, 'fileName': 'string' });
                 // expect(uploadToS3).toHaveBeenCalledWith(Buffer.from('test file data'), 'testFile.jpg', 'image/jpeg');
                 // expect(uploadFileToDatabase).toHaveBeenCalledWith('testFile.jpg', 'mockETagValue', 'image/jpeg', 123);
 

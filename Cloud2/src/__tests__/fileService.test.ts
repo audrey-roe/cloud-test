@@ -1,5 +1,5 @@
-import { S3Client } from "@aws-sdk/client-s3";
-import { createFolder, downloadFromS3, getFileHistory, uploadFileToDatabase } from "../service/file.service";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase } from "../service/file.service";
 import logger from "../utils/logger";
 // import pool from "../utils/db";
 
@@ -24,6 +24,13 @@ jest.mock("../service/file.service", () => {
     getS3Client: jest.fn().mockImplementation(() => mockS3Client),
   };
 });
+jest.mock('pg', () => ({
+  Pool: jest.fn(() => ({
+    connect: jest.fn(),
+    query: jest.fn(),
+    end: jest.fn()
+  }))
+}));
 
 describe("File", () => {
   beforeEach(() => {
@@ -32,8 +39,12 @@ describe("File", () => {
     process.env.s3_SECRET_ACCESS_KEY = 'test-secret-key';
     process.env.AWS_BUCKET_NAME = 'test-bucket';
   });
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
 
   describe("File Service", () => {
+
     describe("uploadToS3", () => {
       let uploadToS3: any;
 
@@ -124,7 +135,7 @@ describe("File", () => {
         await uploadFileToDatabase('filename.txt', 'fileUrl', 'mediaType', 1, mockClient);
 
         expect(mockClient.query).nthCalledWith(1, 'BEGIN');
-        expect(mockClient.query).nthCalledWith(2, 
+        expect(mockClient.query).nthCalledWith(2,
           'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id',
           ['filename.txt', 'mediaType', 'fileUrl', 1, 1]
         );
@@ -251,7 +262,7 @@ describe("File", () => {
       }));
 
       it('should return a QueryResult object with empty rows when given a valid fileId with no history and a mock client', async () => {
-       
+
         const result = await getFileHistory(2, mockClient);
 
         // Assert 
@@ -261,14 +272,64 @@ describe("File", () => {
 
       it('should throw an error when given an invalid fileId and client', async () => {
         const mockQuery = jest.fn().mockRejectedValue(new Error('Invalid fileId'));
-        
+
         const mockClient = { query: mockQuery };
-    
+
         await expect(getFileHistory(1, mockClient)).rejects.toThrow('Invalid fileId');
-    
+
         expect(mockQuery).toHaveBeenCalledWith('SELECT * FROM fileHistory WHERE fileId = $1', [1]);
+      });
+
     });
-    
+
+    describe('streamFromR2', () => {
+      let mockS3Send: jest.Mock;
+      let mockUpdateFileHistory: jest.Mock;
+
+      const mockClient = {
+        query: jest.fn(),
+      };
+
+      beforeEach(async () => {
+        jest.clearAllMocks();
+
+        mockS3Send = jest.fn();
+        (S3Client.prototype.send as jest.Mock) = mockS3Send;
+
+        mockUpdateFileHistory = jest.fn().mockResolvedValue(true);
+        (updateFileHistory as jest.Mock) = mockUpdateFileHistory;
+
+        mockClient.query.mockResolvedValue({ rows: [] });
+      });
+
+      afterEach(() => {
+        jest.clearAllMocks();
+      });
+
+      it('should stream from R2 and update file history', async () => {
+        // Setup
+        const mockResponse = { Body: "mockBody" };
+        mockS3Send.mockResolvedValue(mockResponse);
+        mockClient.query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+        const result = await streamFromR2("testFileName", mockS3Client, 123, mockClient);
+
+        expect(mockS3Send).toHaveBeenCalledWith(new GetObjectCommand({
+          Bucket: process.env.AWS_BUCKET_NAME,
+          Key: "testFileName",
+        }));
+        expect(mockUpdateFileHistory).toHaveBeenCalledWith("testFileName", 'stream', 123, mockClient);
+        expect(result).toBe("mockBody");
+      });
+
+      it('should throw an error if file is not found or fails to stream', async () => {
+        mockS3Send.mockResolvedValue({});
+        mockClient.query.mockResolvedValueOnce({ rows: [] }); 
+
+        await expect(streamFromR2("testFileName", mockS3Client, 123, mockClient))
+          .rejects
+          .toThrow("File not found or failed to stream.");
+      });
     });
 
   });

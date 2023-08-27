@@ -37,6 +37,7 @@ const asyncIteratorToBuffer = async (asyncIterator: AsyncIterable<Uint8Array>): 
     }
     return Buffer.concat(chunks);
 };
+
 export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> => {
     // const s3 = getS3Client();
     if (!process.env.s3_ACCESS_KEY_ID || !process.env.s3_SECRET_ACCESS_KEY) {
@@ -61,6 +62,7 @@ export const downloadFromS3 = async (fileName: string, s3:any): Promise<Buffer> 
         throw err;
     };
 };
+
 export const uploadFileToDatabase = async (fileName: string, fileUrl: string, mediaType: string, userId: number, client: any): Promise<{ fileId: number, fileName: string }> => {
     try {
         await client.query('BEGIN');
@@ -183,18 +185,41 @@ export const getFileHistory = async (fileId: number, client: any): Promise<Query
     }
 };
 
-export const streamFromR2 = async (fileName: string, s3: S3Client) => {
-  
+export const streamFromR2 = async (fileName: string, s3: any, userId: number, client: any) => {
     const params = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: fileName,
     };
   
     const response = await s3.send(new GetObjectCommand(params));
-    
+
+    await updateFileHistory(fileName, 'stream', userId, client);
+
     if (response.Body) {
       return response.Body;
     }
   
     throw new Error("File not found or failed to stream.");
-  };
+};
+
+export const updateFileHistory = async (fileName: string, action: string, userId: number, client: any) => {
+    try {
+        await client.query('BEGIN');
+
+        const fetchIdQuery = 'SELECT id FROM files WHERE file_name = $1 AND ownerid = $2';
+        const fileIdResult = await client.query(fetchIdQuery, [fileName, userId]);
+
+        // if (!fileIdResult.rows.length) {
+        //     throw new Error('File not found in the database');
+        // }
+
+        const fileId = fileIdResult.rows[0].id;
+        const historyQuery = 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)';
+        await client.query(historyQuery, [fileId, action]);
+
+        await client.query('COMMIT');
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    }
+};

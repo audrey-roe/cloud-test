@@ -45,7 +45,7 @@ export const uploadFileHandler = async (req: Request, res: Response) => {
       const fileUrl = s3Response.ETag;
       const client = await pool.connect();
       const fileDetails = await uploadFileToDatabase(filename, fileUrl, mediaType, user, client);
-      
+
       res.status(201).json({ 
           message: 'File uploaded successfully', 
           fileId: fileDetails.fileId, 
@@ -146,11 +146,15 @@ export async function getFileHistoryController(req: Request, res: Response) {
 
 export const streamFileController = async (req: Request, res: Response) => {
   const fileName = req.body.key;
-
+  const userId = res.locals.userId
+ if(!userId){
+  return res.json('User not logeed in, please login again')
+ }
   try {
     const s3 = getS3Client();
+    const client = await pool.connect();
+    const stream = await streamFromR2(fileName, s3, userId, client);
 
-    const stream = await streamFromR2(fileName, s3);
     res.setHeader('Content-Disposition', 'attachment; filename=' + fileName);
     
     if (stream instanceof Readable) {
