@@ -14,7 +14,7 @@ CREATE TABLE files (
   media_type TEXT,
   data TEXT,
   is_unsafe BOOLEAN DEFAULT false,
-  is_pending_deletion BOOLEAN DEFAULT false,
+   BOOLEAN DEFAULT false,
   ownerid INTEGER,
   folder_id INTEGER
 );
@@ -48,6 +48,6 @@ INSERT INTO folders (name, owner_id, parent_folder_id) VALUES ('User folder', 1,
 
 
 --psql -U drey -d postgres
---\c cloud
+--\c newdatabase
 --\dt
 --heroku pg:psql

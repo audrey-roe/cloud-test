@@ -133,7 +133,7 @@ describe("File", () => {
 
         expect(mockClient.query).nthCalledWith(1, 'BEGIN');
         expect(mockClient.query).nthCalledWith(2,
-          'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id',
+          'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, , ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id',
           ['filename.txt', 'mediaType', 'fileUrl', 1, 1]
         );
         expect(mockClient.query).nthCalledWith(3, 'INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [1, 'create']);
@@ -160,7 +160,7 @@ describe("File", () => {
         expect(result).toEqual({ fileId: 123, fileName: 'testFile' });
 
         expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id', [fileName, mediaType, fileUrl, userId, 1]);
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, , ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id', [fileName, mediaType, fileUrl, userId, 1]);
         expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [123, 'create']);
         expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
       });

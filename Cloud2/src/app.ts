@@ -17,7 +17,10 @@ const app = express()
 const port = config.port;
 app.use(express.json());
 
-const redisClient = createClient({ legacyMode: true })
+const redisClient = createClient({
+    url: `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`,
+    legacyMode: true
+});
 const RedisStore = connectRedis(session);
 redisClient.connect().catch((err) => {
   logger.error('Error connecting to Redis:', err);
@@ -40,15 +43,7 @@ app.use(session({
     maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
-// sample route to test fro the session
-app.get('/test', (req, res) => {
-  if(!req.session.views) {
-    req.session.views = 1;
-  } else {
-    req.session.views++;
-  }
-  res.send(`You have visited this page ${req.session.views} times`);
-});
+
 
 app.listen(port, async () => {
   logger.info(`Server is running on http://localhost:${port}`);

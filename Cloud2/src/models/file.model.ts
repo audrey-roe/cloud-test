@@ -8,7 +8,6 @@ export class File {
   mediaType?: string;
   data?: string;
   isUnsafe?: boolean;
-  isPendingDeletion?: boolean;
   pendingReviewBy?: User;
   ownerId?: number;
 
@@ -19,7 +18,6 @@ export class File {
     this.mediaType = fileInput.mediaType;
     this.data = fileInput.data;
     this.isUnsafe = fileInput.isUnsafe;
-    this.isPendingDeletion = fileInput.isPendingDeletion;
     this.pendingReviewBy = fileInput.pendingReviewBy;
     this.ownerId = fileInput.ownerId;
   }
@@ -35,7 +33,6 @@ export interface FileInput {
   mediaType?: string;
   data: string;
   isUnsafe: boolean;
-  isPendingDeletion: boolean;
   pendingReviewBy?: User;
   ownerId?: number;
 }

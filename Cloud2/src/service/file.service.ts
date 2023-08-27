@@ -116,7 +116,7 @@ export const uploadFileToDatabase = async (fileName: string, fileUrl: string, me
 
         const DEFAULT_PARENT_FOLDER_ID = 1;
 
-        const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id';
+        const insertQuery = 'INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, , ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id';
 
         const insertValues = [fileName, mediaType, fileUrl, userId, DEFAULT_PARENT_FOLDER_ID];
         const result = await client.query(insertQuery, insertValues);

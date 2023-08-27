@@ -1,10 +1,10 @@
 ### Health Check
-GET http://localhost:1337/healthcheck
+GET http://localhost:3001/healthcheck
 
 ###
 
 ### Login
-POST http://localhost:1337/api/login
+POST http://localhost:3001/api/login
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 ###
 
 ### Create User
-POST http://localhost:1337/api/user
+POST http://localhost:3001/api/user
 Content-Type: application/json
 
 {
@@ -28,7 +28,7 @@ Content-Type: application/json
 ###
 
 ### Delete User
-DELETE http://localhost:1337/api/user
+DELETE http://localhost:3001/api/user
 Content-Type: application/json
 
 {
@@ -39,7 +39,7 @@ Content-Type: application/json
 ###
 
 ### Upload File (modify content type and body if needed)
-PUT http://localhost:1337/api/file/upload
+PUT http://localhost:3001/api/file/upload
 Content-Type: multipart/form-data; boundary=---BOUNDARY
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
 
@@ -53,18 +53,18 @@ Sample File Content
 ###
 
 ### Download File
-GET http://localhost:1337/api/file/download/8
+GET http://localhost:3001/api/file/download/8
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
 
 ###
 
 ### Stream File
-GET http://localhost:1337/api/file/stream/SAMPLE_FILE_NAME
+GET http://localhost:3001/api/file/stream/SAMPLE_FILE_NAME
 
 ###
 
 ### Create Folder
-POST http://localhost:1337/api/create-folder
+POST http://localhost:3001/api/create-folder
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
 
@@ -75,7 +75,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhd
 ###
 
 ### Mark and Delete Unsafe File
-POST http://localhost:1337/api/file/mark-unsafe
+POST http://localhost:3001/api/file/mark-unsafe
 Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
 
@@ -86,7 +86,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhd
 ###
 
 ### Get File History
-GET http://localhost:1337/api/file-history
+GET http://localhost:3001/api/file-history
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImlhdCI6MTY5Mjk2MTc2NiwiZXhwIjoxNjkyOTY1MzY2fQ.8y2ZRcLHBzdVXE0H9k8TI3IwkL4Kw2BPyaQGD_Q8nxM
 
 ###

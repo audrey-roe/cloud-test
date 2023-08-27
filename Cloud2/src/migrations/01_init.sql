@@ -14,7 +14,6 @@ CREATE TABLE files (
   media_type TEXT,
   data TEXT,
   is_unsafe BOOLEAN DEFAULT false,
-  is_pending_deletion BOOLEAN DEFAULT false,
   ownerid INTEGER,
   folder_id INTEGER
 );
@@ -41,4 +40,5 @@ CREATE TABLE folders (
   parent_folder_id INTEGER
 );
 
+INSERT INTO users (user_name,user_email,user_password) VALUES ('Audrey','audrey@test.com','Password456!');
 INSERT INTO folders (name, owner_id, parent_folder_id) VALUES ('User folder', 1, NULL);
