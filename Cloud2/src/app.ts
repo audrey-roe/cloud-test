@@ -13,8 +13,8 @@ const upload = multer({ storage });
 
 dotenv.config();
 
-const app = express()
-const port = config.port;
+const app = express();
+const PORT = process.env.PORT || 3001;
 app.use(express.json());
 
 const redisClient = createClient({
@@ -45,8 +45,8 @@ app.use(session({
 }));
 
 
-app.listen(port, async () => {
-  logger.info(`Server is running on http://localhost:${port}`);
+app.listen(PORT, async () => {
+  logger.info(`Server is running on http://localhost:${PORT}`);
   await connect();
   routes(app)
 })
