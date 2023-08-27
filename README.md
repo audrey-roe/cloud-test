@@ -94,7 +94,3 @@ Completed features as part of the "Backend Engineer Test". All features under "S
 ## Contribution
 
 Feel free to fork this project and raise a PR for any enhancements.
-
----
-
-**Note:** You would replace placeholders such as `[your-repo-url]`, `[your-repo-name]`, and other placeholder URLs with the actual URLs or values relevant to your project.
