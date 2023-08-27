@@ -1,5 +1,5 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase, markAndDeleteUnsafeFile } from "../service/file.service";
+import { createFolder, downloadFromS3, getFileHistory, streamFromR2, updateFileHistory, uploadFileToDatabase, getFileFromDatabase, markAndDeleteUnsafeFile } from "../service/file.service";
 import logger from "../utils/logger";
 import * as fileService from "../service/file.service";
 
@@ -139,6 +139,33 @@ describe("File", () => {
         expect(mockClient.query).nthCalledWith(4, 'COMMIT');
 
       });
+      it('should successfully upload a file and return its id and name', async () => {
+        mockClient = {
+          query: jest.fn()
+        };
+        mockClient.query
+          .mockImplementationOnce(() => Promise.resolve())
+          .mockResolvedValueOnce({ rows: [{ id: 123 }] })
+          .mockImplementationOnce(() => Promise.resolve())
+          .mockImplementationOnce(() => Promise.resolve());
+
+        const fileName = 'testFile';
+        const fileUrl = 'testUrl';
+        const mediaType = 'image/png';
+        const userId = 1;
+
+        const result = await uploadFileToDatabase(fileName, fileUrl, mediaType, userId, mockClient);
+
+        expect(result).toEqual({ fileId: 123, fileName: 'testFile' });
+
+        expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id', [fileName, mediaType, fileUrl, userId, 1]);
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [123, 'create']);
+        expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+      });
+
+
+      
 
       it('should roll back transaction if error during files table insertion', async () => {
         const mockClient = {
@@ -164,6 +191,19 @@ describe("File", () => {
         await expect(uploadFileToDatabase('filename.txt', 'fileUrl', 'mediaType', 1, mockClient)).rejects.toThrow('DB Error');
 
         expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      });
+
+      it('should rollback and throw error if any operation fails', async () => {
+        mockClient = {
+          query: jest.fn()
+        };
+        mockClient.query.mockImplementationOnce(() => {
+          throw new Error('Database error');
+        });
+
+        await expect(uploadFileToDatabase('testFile', 'testUrl', 'image/png', 1, mockClient)).rejects.toThrow('Database error');
+
         expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
       });
 
@@ -357,47 +397,45 @@ describe("File", () => {
       });
     });
 
-    describe('uploadFileToDatabase', () => {
-      let mockClient: any;
+      describe('getFileFromDatabase', () => {
+        let mockClient: any;
 
-      beforeEach(() => {
-        mockClient = {
-          query: jest.fn()
-        };
-      });
-
-      it('should successfully upload a file and return its id and name', async () => {
-        mockClient.query
-          .mockImplementationOnce(() => Promise.resolve())
-          .mockResolvedValueOnce({ rows: [{ id: 123 }] })
-          .mockImplementationOnce(() => Promise.resolve())
-          .mockImplementationOnce(() => Promise.resolve());
-
-        const fileName = 'testFile';
-        const fileUrl = 'testUrl';
-        const mediaType = 'image/png';
-        const userId = 1;
-
-        const result = await uploadFileToDatabase(fileName, fileUrl, mediaType, userId, mockClient);
-
-        expect(result).toEqual({ fileId: 123, fileName: 'testFile' });
-
-        expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
-        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id', [fileName, mediaType, fileUrl, userId, 1]);
-        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [123, 'create']);
-        expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
-      });
-
-
-      it('should rollback and throw error if any operation fails', async () => {
-        mockClient.query.mockImplementationOnce(() => {
-          throw new Error('Database error');
+        beforeEach(() => {
+          mockClient = {
+            query: jest.fn(),
+          };
         });
 
-        await expect(uploadFileToDatabase('testFile', 'testUrl', 'image/png', 1, mockClient)).rejects.toThrow('Database error');
+        it('should retrieve the file and log a download action if the file exists', async () => {
+          const mockFile = { id: '123', file_name: 'testFile' };
 
-        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
-      });
+          mockClient.query
+            .mockResolvedValueOnce({ rows: [mockFile] })
+            .mockResolvedValueOnce({});
+
+          const result = await getFileFromDatabase('123', mockClient);
+
+          expect(result.rows[0]).toEqual(mockFile);
+          expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
+          expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', ['123', 'download']);
+        });
+
+        it('should not log a download action if the file does not exist', async () => {
+          mockClient.query.mockResolvedValueOnce({ rows: [] });
+
+          const result = await getFileFromDatabase('123', mockClient);
+
+          expect(result.rows.length).toBe(0);
+          expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
+          expect(mockClient.query).toHaveBeenCalledTimes(1);
+        });
+
+        it('should throw an error if there is an issue', async () => {
+          mockClient.query.mockRejectedValueOnce(new Error('Database error'));
+
+          await expect(getFileFromDatabase('123', mockClient)).rejects.toThrow('Database error');
+        });
     });
+
   });
 });
