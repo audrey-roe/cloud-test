@@ -166,7 +166,7 @@ describe("File", () => {
       });
 
 
-      
+
 
       it('should roll back transaction if error during files table insertion', async () => {
         const mockClient = {
@@ -399,84 +399,84 @@ describe("File", () => {
     });
 
     describe('getFileFromDatabase', () => {
-        let mockClient: any;
+      let mockClient: any;
 
-        beforeEach(() => {
-          mockClient = {
-            query: jest.fn(),
-          };
-        });
+      beforeEach(() => {
+        mockClient = {
+          query: jest.fn(),
+        };
+      });
 
-        it('should retrieve the file and log a download action if the file exists', async () => {
-          const mockFile = { id: '123', file_name: 'testFile' };
+      it('should retrieve the file and log a download action if the file exists', async () => {
+        const mockFile = { id: '123', file_name: 'testFile' };
 
-          mockClient.query
-            .mockResolvedValueOnce({ rows: [mockFile] })
-            .mockResolvedValueOnce({});
+        mockClient.query
+          .mockResolvedValueOnce({ rows: [mockFile] })
+          .mockResolvedValueOnce({});
 
-          const result = await getFileFromDatabase('123', mockClient);
+        const result = await getFileFromDatabase('123', mockClient);
 
-          expect(result.rows[0]).toEqual(mockFile);
-          expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
-          expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', ['123', 'download']);
-        });
+        expect(result.rows[0]).toEqual(mockFile);
+        expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', ['123', 'download']);
+      });
 
-        it('should not log a download action if the file does not exist', async () => {
-          mockClient.query.mockResolvedValueOnce({ rows: [] });
+      it('should not log a download action if the file does not exist', async () => {
+        mockClient.query.mockResolvedValueOnce({ rows: [] });
 
-          const result = await getFileFromDatabase('123', mockClient);
+        const result = await getFileFromDatabase('123', mockClient);
 
-          expect(result.rows.length).toBe(0);
-          expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
-          expect(mockClient.query).toHaveBeenCalledTimes(1);
-        });
+        expect(result.rows.length).toBe(0);
+        expect(mockClient.query).toHaveBeenCalledWith('SELECT * FROM files WHERE id = $1', ['123']);
+        expect(mockClient.query).toHaveBeenCalledTimes(1);
+      });
 
-        it('should throw an error if there is an issue', async () => {
-          mockClient.query.mockRejectedValueOnce(new Error('Database error'));
+      it('should throw an error if there is an issue', async () => {
+        mockClient.query.mockRejectedValueOnce(new Error('Database error'));
 
-          await expect(getFileFromDatabase('123', mockClient)).rejects.toThrow('Database error');
-        });
+        await expect(getFileFromDatabase('123', mockClient)).rejects.toThrow('Database error');
+      });
     });
 
 
 
-describe('reviewFileService', () => {
-  const mockClient = {
-    query: jest.fn()
-  };
+    describe('reviewFileService', () => {
+      const mockClient = {
+        query: jest.fn()
+      };
 
-  beforeEach(() => {
-    mockClient.query.mockClear();
-  });
+      beforeEach(() => {
+        mockClient.query.mockClear();
+      });
 
-  it('should successfully review a file and delete it', async () => {
-    mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
-      rows: [{ count: '2' }]
+      it('should successfully review a file and delete it', async () => {
+        mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
+          rows: [{ count: '2' }]
+        });
+
+        const response = await reviewFileService(1, 1, true, mockClient);
+
+        expect(response).toBe("File and its history successfully deleted.");
+      });
+
+      it('should successfully review a file and return the number of approvals needed', async () => {
+        mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
+          rows: [{ count: '1' }]
+        });
+
+        const response = await reviewFileService(1, 1, true, mockClient);
+
+        expect(response).toBe("You have successfully marked the file for deletion. This file will be deleted when it is approved by 1 other administrative users.");
+      });
+
+      it('should handle exceptions and return an error message', async () => {
+        mockClient.query.mockRejectedValue(new Error('Database error'));
+
+        const response = await reviewFileService(1, 1, true, mockClient);
+
+        expect(response).toBe("An error occurred during the file review process.");
+      });
     });
-
-    const response = await reviewFileService(1, 1, true, mockClient);
-
-    expect(response).toBe("File and its history successfully deleted.");
-  });
-
-  it('should successfully review a file and return the number of approvals needed', async () => {
-    mockClient.query.mockResolvedValueOnce({}).mockResolvedValueOnce({
-      rows: [{ count: '1' }]
-    });
-
-    const response = await reviewFileService(1, 1, true, mockClient);
-
-    expect(response).toBe("You have successfully marked the file for deletion. This file will be deleted when it is approved by 1 other administrative users.");
-  });
-
-  it('should handle exceptions and return an error message', async () => {
-    mockClient.query.mockRejectedValue(new Error('Database error'));
-
-    const response = await reviewFileService(1, 1, true, mockClient);
-
-    expect(response).toBe("An error occurred during the file review process.");
-  });
-});
 
 
 
