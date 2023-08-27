@@ -20,7 +20,7 @@ app.use(express.json());
 const redisClient = createClient({ legacyMode: true })
 const RedisStore = connectRedis(session);
 redisClient.connect().catch((err) => {
-  logger.info('Error connecting to Redis:', err);
+  logger.error('Error connecting to Redis:', err);
 });
 
 // app.use(setupRedisMiddleware);
