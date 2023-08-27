@@ -1,16 +1,21 @@
-import { uploadFileHandler, handleCreateFolder, getFileHandler, getFileHistoryController } from "../controller/files.controller";
+import { uploadFileHandler, handleCreateFolder, getFileHandler, getFileHistoryController, markAndDeleteUnsafeFileController, getS3Client, streamFileController } from "../controller/files.controller";
 import { Response, Request } from 'express';
-import { uploadToS3, createFolder, getFileHistory } from '../service/file.service';
-import { uploadFileToDatabase } from '../service/file.service';
+import { uploadToS3, createFolder, getFileHistory, streamFromR2 } from '../service/file.service';
+import { uploadFileToDatabase, markAndDeleteUnsafeFile } from '../service/file.service';
 import { Readable } from "stream";
 import * as fileService from '../service/file.service';
 import { QueryResult } from "pg";
+import pool from "../utils/pool";
 
 jest.mock('../service/file.service');
 
 describe('File', () => {
 
     describe('FileController', () => {
+        let mockReq: Partial<Request>;
+        let mockRes: Partial<Response>;
+        let mockPoolConnect: jest.Mock;
+        let mockS3Client: jest.Mock;
         beforeEach(() => {
             jest.clearAllMocks();
 
@@ -20,7 +25,6 @@ describe('File', () => {
         afterEach(() => {
             jest.clearAllMocks();
         });
-    
 
         describe('uploadFileHandler', () => {
             const mockRequest: Partial<Request> = {};
@@ -74,12 +78,12 @@ describe('File', () => {
                 };
 
                 uploadToS3Spy.mockResolvedValue(mockS3Response)
-                uploadFileToDatabaseSpy.mockResolvedValue({ fileId: 9999, fileName: 'string'} );
+                uploadFileToDatabaseSpy.mockResolvedValue({ fileId: 9999, fileName: 'string' });
 
                 await uploadFileHandler(mockRequest as Request, mockResponse as Response);
 
                 expect(mockResponse.status).toHaveBeenCalledWith(201);
-                expect(mockResponse.json).toHaveBeenCalledWith({  message: 'File uploaded successfully' , 'fileId': 9999, 'fileName': 'string' });
+                expect(mockResponse.json).toHaveBeenCalledWith({ message: 'File uploaded successfully', 'fileId': 9999, 'fileName': 'string' });
                 // expect(uploadToS3).toHaveBeenCalledWith(Buffer.from('test file data'), 'testFile.jpg', 'image/jpeg');
                 // expect(uploadFileToDatabase).toHaveBeenCalledWith('testFile.jpg', 'mockETagValue', 'image/jpeg', 123);
 
@@ -367,7 +371,7 @@ describe('File', () => {
 
             beforeEach(() => {
                 mockRequest = {
-                    params: { fileId: '1' } 
+                    params: { fileId: '1' }
                 };
                 mockResponse = {
                     status: jest.fn().mockReturnThis(),
@@ -378,7 +382,7 @@ describe('File', () => {
 
 
             it('should return file history successfully', async () => {
-                mockRequest.params.fileId = '2'; 
+                mockRequest.params.fileId = '2';
 
                 const mockHistory: QueryResult = {
                     rows: [
@@ -387,7 +391,7 @@ describe('File', () => {
                     command: 'SELECT',
                     rowCount: 15,
                     oid: 0,
-                    fields: [], 
+                    fields: [],
                 };
 
                 mockGetFileHistory.mockResolvedValue(mockHistory);
@@ -411,6 +415,132 @@ describe('File', () => {
 
         });
 
+        describe('markAndDeleteUnsafeFileController', () => {
+
+
+            beforeEach(() => {
+                mockReq = {
+                    body: {
+                        file: {
+                            id: '123',
+                        },
+                    },
+                };
+
+                mockRes = {
+                    status: jest.fn().mockReturnThis(),
+                    json: jest.fn().mockReturnThis(),
+                };
+
+                mockPoolConnect = jest.fn();
+                (pool.connect as jest.Mock) = mockPoolConnect;
+            });
+
+            it('should successfully mark and delete the file', async () => {
+                mockPoolConnect.mockResolvedValueOnce({});
+                (markAndDeleteUnsafeFile as jest.Mock).mockResolvedValueOnce({});
+
+                await markAndDeleteUnsafeFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.status).toHaveBeenCalledWith(200);
+                expect(mockRes.json).toHaveBeenCalledWith({ message: 'File marked as unsafe and deleted successfully.' });
+            });
+
+            it('should respond with 404 when file is not found', async () => {
+                const errorMsg = 'File not found.';
+                (markAndDeleteUnsafeFile as jest.Mock).mockRejectedValueOnce(new Error(errorMsg));
+
+                await markAndDeleteUnsafeFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.status).toHaveBeenCalledWith(404);
+                expect(mockRes.json).toHaveBeenCalledWith({ error: errorMsg });
+            });
+
+            it('should handle other errors during marking and deletion', async () => {
+                (markAndDeleteUnsafeFile as jest.Mock).mockRejectedValueOnce(new Error('DB Error'));
+
+                await markAndDeleteUnsafeFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.status).toHaveBeenCalledWith(500);
+                expect(mockRes.json).toHaveBeenCalledWith({ error: 'An error occurred while marking and deleting the file.' });
+            });
+        });
+
+        describe('streamFileController', () => {
+            interface MockResponse extends Response {
+                locals: {
+                    userId?: number;
+                };
+                setHeader: jest.Mock;
+                status: jest.Mock;
+                json: jest.Mock;
+            }
+            let mockRes: MockResponse;
+            
+            beforeEach(() => {
+                mockReq = {
+                    body: {
+                        key: 'sample-file.jpg',
+                    },
+                };
+
+                mockRes = {
+                    locals: { userId: 123 },
+                    setHeader: jest.fn(),
+                    status: jest.fn().mockReturnThis(),
+                    json: jest.fn().mockReturnThis(),
+                } as MockResponse;                
+                
+                mockPoolConnect = jest.fn();
+                mockS3Client = jest.fn();
+                (pool.connect as jest.Mock) = mockPoolConnect;
+                (getS3Client as jest.Mock) = mockS3Client;
+            });
+
+            it('should successfully stream the file', async () => {
+                const mockStream = new Readable();
+                mockStream.push('sample data');
+                mockStream.push(null);
+
+                mockPoolConnect.mockResolvedValueOnce({});
+                mockS3Client.mockReturnValueOnce({});
+                (streamFromR2 as jest.Mock).mockResolvedValueOnce(mockStream);
+
+                await streamFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Disposition', 'attachment; filename=sample-file.jpg');
+            });
+
+            it('should handle a failed stream', async () => {
+                mockPoolConnect.mockResolvedValueOnce({});
+                mockS3Client.mockReturnValueOnce({});
+                (streamFromR2 as jest.Mock).mockResolvedValueOnce({});
+
+                await streamFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.status).toHaveBeenCalledWith(500);
+                expect(mockRes.json).toHaveBeenCalledWith({ message: 'Internal server error', error: "Failed to get a readable stream." });
+            });
+
+            it('should handle user not logged in', async () => {
+                mockRes.locals.userId = undefined;
+
+                await streamFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.json).toHaveBeenCalledWith('User not logged in, please login again');
+            });
+
+            it('should handle other server errors', async () => {
+                mockPoolConnect.mockResolvedValueOnce({});
+                mockS3Client.mockReturnValueOnce({});
+                (streamFromR2 as jest.Mock).mockRejectedValueOnce(new Error('Unexpected error'));
+
+                await streamFileController(mockReq as Request, mockRes as Response);
+
+                expect(mockRes.status).toHaveBeenCalledWith(500);
+                expect(mockRes.json).toHaveBeenCalledWith({ message: 'Internal server error', error: 'Unexpected error' });
+            });
+        });
 
     })
 })

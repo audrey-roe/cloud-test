@@ -9,14 +9,6 @@ jest.mock("../utils/logger", () => ({
   info: jest.fn()
 }));
 
-const mockSend = jest.fn().mockResolvedValue({
-  Body: (async function* (): AsyncGenerator<Uint8Array, void, void> {
-    yield new Uint8Array([1, 2, 3, 4]);
-  })()
-});
-
-const mockS3Client = { send: mockSend };
-
 jest.mock("../service/file.service", () => {
   const originalModule = jest.requireActual("../service/file.service");
   return {
@@ -34,7 +26,16 @@ jest.mock('pg', () => ({
   }))
 }));
 
+const mockSend = jest.fn().mockResolvedValue({
+  Body: (async function* (): AsyncGenerator<Uint8Array, void, void> {
+    yield new Uint8Array([1, 2, 3, 4]);
+  })()
+});
+
+const mockS3Client = { send: mockSend };
+
 describe("File", () => {
+
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.s3_ACCESS_KEY_ID = 'test-access-key';

@@ -115,6 +115,19 @@ export async function handleCreateFolder(req: Request, res: Response) {
   }
 }
 
+export async function getFileHistoryController(req: Request, res: Response) {
+  const fileId = parseInt(req.params.fileId);
+
+  try {
+    const client = await pool.connect();
+    const history = await getFileHistory(fileId, client);
+    res.status(200).json({ history: history.rows });
+  } catch (error) {
+
+    res.status(500).json({ error: 'An error occurred while retrieving file history.' });
+  }
+}
+
 export async function markAndDeleteUnsafeFileController(req: Request, res: Response) {
   const fileId = parseInt(req.body.file.id);
 
@@ -131,24 +144,11 @@ export async function markAndDeleteUnsafeFileController(req: Request, res: Respo
   }
 }
 
-export async function getFileHistoryController(req: Request, res: Response) {
-  const fileId = parseInt(req.params.fileId);
-
-  try {
-    const client = await pool.connect();
-    const history = await getFileHistory(fileId, client);
-    res.status(200).json({ history: history.rows });
-  } catch (error) {
-
-    res.status(500).json({ error: 'An error occurred while retrieving file history.' });
-  }
-}
-
 export const streamFileController = async (req: Request, res: Response) => {
   const fileName = req.body.key;
   const userId = res.locals.userId
  if(!userId){
-  return res.json('User not logeed in, please login again')
+  return res.json('User not logged in, please login again')
  }
   try {
     const s3 = getS3Client();
