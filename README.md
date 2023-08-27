@@ -80,7 +80,7 @@ A robust cloud backup system that serves as a platform for users to backup, mana
    ```
 5. You can test the application(but be sure to create an env file first), just run
    ```bash
-   yarn test
+   npm test
    ```
 ## Documentation
 
