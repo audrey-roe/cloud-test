@@ -311,7 +311,6 @@ describe("File", () => {
       });
     });
 
-
     describe('markAndDeleteUnsafeFile', () => {
       let mockClient: any;
 
@@ -326,26 +325,26 @@ describe("File", () => {
       });
 
       it('should throw an error if file is not found', async () => {
-        mockClient.query.mockResolvedValue({ rows: [] }); 
-    
+        mockClient.query.mockResolvedValue({ rows: [] });
+
         await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('File not found.');
-    });
-    
-    it('should throw an error if file type is not supported', async () => {
-        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'text/plain' }] }); 
-    
+      });
+
+      it('should throw an error if file type is not supported', async () => {
+        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'text/plain' }] });
+
         await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('File type is not supported for marking as unsafe and deleting.');
-    });
-    
-    it('should mark as unsafe and delete if file type is image or video', async () => {
-        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'image/png' }] }); 
-    
+      });
+
+      it('should mark as unsafe and delete if file type is image or video', async () => {
+        mockClient.query.mockResolvedValue({ rows: [{ media_type: 'image/png' }] });
+
         await markAndDeleteUnsafeFile(123, mockClient);
-    
+
         expect(mockClient.query).toHaveBeenCalledWith('UPDATE files SET is_unsafe = true WHERE id = $1', [123]);
         expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM fileHistory WHERE fileid = $1', [123]);
         expect(mockClient.query).toHaveBeenCalledWith('DELETE FROM files WHERE id = $1', [123]);
-    });
+      });
 
       it('should rollback if any operation fails', async () => {
         mockClient.query.mockResolvedValueOnce({ rows: [{ media_type: 'image/png' }] });
@@ -354,6 +353,49 @@ describe("File", () => {
         });
 
         await expect(markAndDeleteUnsafeFile(123, mockClient)).rejects.toThrow('DB error');
+        expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      });
+    });
+
+    describe('uploadFileToDatabase', () => {
+      let mockClient: any;
+
+      beforeEach(() => {
+        mockClient = {
+          query: jest.fn()
+        };
+      });
+
+      it('should successfully upload a file and return its id and name', async () => {
+        mockClient.query
+          .mockImplementationOnce(() => Promise.resolve())
+          .mockResolvedValueOnce({ rows: [{ id: 123 }] })
+          .mockImplementationOnce(() => Promise.resolve())
+          .mockImplementationOnce(() => Promise.resolve());
+
+        const fileName = 'testFile';
+        const fileUrl = 'testUrl';
+        const mediaType = 'image/png';
+        const userId = 1;
+
+        const result = await uploadFileToDatabase(fileName, fileUrl, mediaType, userId, mockClient);
+
+        expect(result).toEqual({ fileId: 123, fileName: 'testFile' });
+
+        expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO files (file_name, upload_date, media_type, data, is_unsafe, is_pending_deletion, ownerid, folder_id) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, false, false, $4, $5) RETURNING id', [fileName, mediaType, fileUrl, userId, 1]);
+        expect(mockClient.query).toHaveBeenCalledWith('INSERT INTO fileHistory (fileId, action) VALUES ($1, $2)', [123, 'create']);
+        expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+      });
+
+
+      it('should rollback and throw error if any operation fails', async () => {
+        mockClient.query.mockImplementationOnce(() => {
+          throw new Error('Database error');
+        });
+
+        await expect(uploadFileToDatabase('testFile', 'testUrl', 'image/png', 1, mockClient)).rejects.toThrow('Database error');
+
         expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
       });
     });
