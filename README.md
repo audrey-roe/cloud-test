@@ -78,7 +78,10 @@ A robust cloud backup system that serves as a platform for users to backup, mana
    ```bash
    npm start
    ```
-
+5. You can test the application(but be sure to create an env file first), just run
+   ```bash
+   npm test
+   ```
 ## Documentation
 
 API endpoints are well-documented in a Postman collection. [Link to Postman collection](https://elements.getpostman.com/redirect?entityId=28927032-a52342a9-b2d1-4710-9c37-7f012f2c9924&entityType=collection)
