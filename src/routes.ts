@@ -8,6 +8,7 @@ import multer from 'multer';
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 function routes(app: Express){
+    app.get("/", (req:Request, res: Response)=> res.status(200).send('Welcome To Cloudguardian! Check out the Postman collection for the available endpoints' ));
     app.get("/healthcheck", (req:Request, res: Response)=> res.sendStatus(200));
     app.post('/api/login', createOrUpdateSession, loginUserHandler);
     app.post('/api/user', createOrUpdateSession, createUserHandler);

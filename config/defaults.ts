@@ -1,6 +1,6 @@
 export default {
     PORT: 3001,
-    dbUri: "postgresql://alex:alex@db:5432/newdatabase",
+    dbUri: "postgres://ozjcmueoexqphk:3da4d0ba5d0c9a37b13a0627fb96dfb7af79e83d8d401a79073b9470f3e1f871@ec2-3-232-218-211.compute-1.amazonaws.com:5432/d4mrl9l0igosvg",
     saltWorkFactor: 10, //how many times to salt the password 
     accessTokenTtl: "15m",
     refreshTokenTtl: "1y",

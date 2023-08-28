@@ -3,9 +3,9 @@ import logger from '../utils/logger';
 import config from '../../config/defaults';
 
 const client = new Client({
-    connectionString: config.dbUri,
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
-
 async function connect() {
     try {
         await client.connect();
