@@ -61,24 +61,18 @@ A robust cloud backup system that serves as a platform for users to backup, mana
    git clone https://github.com/audrey-roe/cloud-test.git
    ```
 
-2. Navigate to the directory.
-
-   ```bash
-   cd Cloud2
-   ```
-
-3. Install dependencies.
+2. Install dependencies.
 
    ```bash
    npm install
    ```
 
-4. Run the application.
+3. Run the application.
 
    ```bash
    npm start
    ```
-5. You can test the application(but be sure to create an env file first), just run
+4. You can test the application(but be sure to create an env file first), just run
    ```bash
    npm test
    ```
