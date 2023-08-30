@@ -72,7 +72,7 @@ A robust cloud backup system that serves as a platform for users to backup, mana
    ```bash
    npm start
    ```
-4. You can test the application(but be sure to create an env file first), just run
+4. You can test the application, just run
    ```bash
    npm test
    ```
