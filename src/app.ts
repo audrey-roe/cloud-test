@@ -24,6 +24,22 @@ const RedisStore = connectRedis(session);
 redisClient.connect().catch((err) => {
   logger.error('Error connecting to Redis:', err);
 });
+redisClient.on('ready', () => {
+  logger.info('Redis client is ready');
+});
+
+redisClient.on('connect', () => {
+  logger.info('Connected to Redis');
+});
+
+redisClient.on('reconnecting', () => {
+  logger.warn('Reconnecting to Redis...');
+});
+
+redisClient.on('end', () => {
+  logger.warn('Redis connection closed');
+});
+
 
 // app.use(setupRedisMiddleware);
 const sessionSecret = process.env.sessionSecret !== undefined ? process.env.sessionSecret : 'D9lTgknR8YBPzwTqZRred9tEu4uI3xus';
@@ -42,6 +58,12 @@ app.use(session({
     maxAge: 12000 * 60 * 10 //setting the session age in millisec (2hrs)
   }
 }));
+
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  logger.error(err.stack);
+  res.status(500).send('Something broke!');
+});
+
 
 const port = process.env.PORT || 3001;
 

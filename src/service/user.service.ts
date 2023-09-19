@@ -45,6 +45,7 @@ export const createUser = async (userInput: UserInput, client: any, session_id: 
         if (error.statusCode === 409) {
             throw error;
         } else {
+            console.error("PostgreSQL Error:", error.message);
             throw new Error('Failed to create user');
         }
     }
