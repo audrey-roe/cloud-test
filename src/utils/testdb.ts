@@ -1,4 +1,4 @@
-import { Pool } from 'pg'; // Import the actual Pool class from your database library
+import { Pool } from 'pg'; // Import the actual Pool class from database library
 
 const mockConnect = jest.fn();
 const mockQuery = jest.fn();
@@ -14,7 +14,7 @@ class MockedPool extends Pool {
   }
 }
 
-const originalPool = jest.requireActual('your-db-library'); // Import the original Pool class
+const originalPool = jest.requireActual('db-library'); // Import the original Pool class
 
 const mockPool = new MockedPool();
 
