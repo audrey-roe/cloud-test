@@ -115,7 +115,6 @@ export async function getUserFromDatabase(userId: number): Promise<any | null> {
         throw err;
     }
 }
-
 // * Revoke the session of a logged-in user.
 
 export async function revokeSession(req: Request, res: Response, next: NextFunction) {

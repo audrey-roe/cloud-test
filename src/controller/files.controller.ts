@@ -183,7 +183,7 @@ export const streamFileController = async (req: Request, res: Response) => {
   }
 };
 
-// Handler to allow admins to review a file called by reviewFileService function 
+// Handler to allow admins to review a file; calls reviewFileService function.
 export const reviewFile = async (req: Request, res: Response) => {
   try {
       const fileId = parseInt(req.params.fileId, 10);
